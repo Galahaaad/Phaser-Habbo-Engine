@@ -18,6 +18,7 @@ export const WALL_STYLES: Record<string, WallStyle> = {
 export class WallRenderer {
   private currentWallType: string = '101';
   private wallHeight: number = 96;
+  private wallThickness: number = 13;
 
   constructor(_scene: Phaser.Scene) {}
 
@@ -81,6 +82,18 @@ export class WallRenderer {
     const bottomRight = IsometricEngine.tileToScreen(tile.x + 1, tile.y, tile.height);
     const topRight = IsometricEngine.tileToScreen(tile.x + 1, tile.y, tile.height + this.wallHeight / IsometricEngine.TILE_SCALE);
 
+    const bottomRightThick = { x: bottomRight.x, y: bottomRight.y + this.wallThickness };
+    const topRightThick = { x: topRight.x, y: topRight.y + this.wallThickness };
+
+    graphics.fillStyle(this.darkenColor(style.color, 0.7), 1);
+    graphics.beginPath();
+    graphics.moveTo(topRight.x, topRight.y);
+    graphics.lineTo(bottomRight.x, bottomRight.y);
+    graphics.lineTo(bottomRightThick.x, bottomRightThick.y);
+    graphics.lineTo(topRightThick.x, topRightThick.y);
+    graphics.closePath();
+    graphics.fillPath();
+
     graphics.fillStyle(style.color, 1);
     graphics.beginPath();
     graphics.moveTo(bottom.x, bottom.y);
@@ -89,9 +102,6 @@ export class WallRenderer {
     graphics.lineTo(bottomRight.x, bottomRight.y);
     graphics.closePath();
     graphics.fillPath();
-
-    graphics.lineStyle(1, style.borderColor, 1);
-    graphics.strokePath();
   }
 
   private renderWestWall(graphics: Phaser.GameObjects.Graphics, tile: Tile, style: WallStyle): void {
@@ -101,7 +111,19 @@ export class WallRenderer {
     const bottomLeft = IsometricEngine.tileToScreen(tile.x, tile.y + 1, tile.height);
     const topLeft = IsometricEngine.tileToScreen(tile.x, tile.y + 1, tile.height + this.wallHeight / IsometricEngine.TILE_SCALE);
 
-    graphics.fillStyle(this.darkenColor(style.color, 0.85), 0.9);
+    const bottomLeftThick = { x: bottomLeft.x, y: bottomLeft.y + this.wallThickness };
+    const topLeftThick = { x: topLeft.x, y: topLeft.y + this.wallThickness };
+
+    graphics.fillStyle(this.darkenColor(style.color, 0.6), 1);
+    graphics.beginPath();
+    graphics.moveTo(topLeft.x, topLeft.y);
+    graphics.lineTo(bottomLeft.x, bottomLeft.y);
+    graphics.lineTo(bottomLeftThick.x, bottomLeftThick.y);
+    graphics.lineTo(topLeftThick.x, topLeftThick.y);
+    graphics.closePath();
+    graphics.fillPath();
+
+    graphics.fillStyle(this.darkenColor(style.color, 0.85), 1);
 
     graphics.beginPath();
     graphics.moveTo(bottom.x, bottom.y);
@@ -110,9 +132,6 @@ export class WallRenderer {
     graphics.lineTo(bottomLeft.x, bottomLeft.y);
     graphics.closePath();
     graphics.fillPath();
-
-    graphics.lineStyle(1, style.borderColor, 1);
-    graphics.strokePath();
   }
 
   private renderEastWall(graphics: Phaser.GameObjects.Graphics, tile: Tile, style: WallStyle): void {
@@ -122,6 +141,18 @@ export class WallRenderer {
     const bottomRight = IsometricEngine.tileToScreen(tile.x + 1, tile.y + 1, tile.height);
     const topRight = IsometricEngine.tileToScreen(tile.x + 1, tile.y + 1, tile.height + this.wallHeight / IsometricEngine.TILE_SCALE);
 
+    const bottomRightThick = { x: bottomRight.x, y: bottomRight.y + this.wallThickness };
+    const topRightThick = { x: topRight.x, y: topRight.y + this.wallThickness };
+
+    graphics.fillStyle(this.darkenColor(style.color, 0.7), 1);
+    graphics.beginPath();
+    graphics.moveTo(topRight.x, topRight.y);
+    graphics.lineTo(bottomRight.x, bottomRight.y);
+    graphics.lineTo(bottomRightThick.x, bottomRightThick.y);
+    graphics.lineTo(topRightThick.x, topRightThick.y);
+    graphics.closePath();
+    graphics.fillPath();
+
     graphics.fillStyle(style.color, 1);
     graphics.beginPath();
     graphics.moveTo(bottom.x, bottom.y);
@@ -130,9 +161,6 @@ export class WallRenderer {
     graphics.lineTo(bottomRight.x, bottomRight.y);
     graphics.closePath();
     graphics.fillPath();
-
-    graphics.lineStyle(1, style.borderColor, 1);
-    graphics.strokePath();
   }
 
   private renderSouthWall(graphics: Phaser.GameObjects.Graphics, tile: Tile, style: WallStyle): void {
@@ -142,7 +170,19 @@ export class WallRenderer {
     const bottomLeft = IsometricEngine.tileToScreen(tile.x + 1, tile.y + 1, tile.height);
     const topLeft = IsometricEngine.tileToScreen(tile.x + 1, tile.y + 1, tile.height + this.wallHeight / IsometricEngine.TILE_SCALE);
 
-    graphics.fillStyle(this.darkenColor(style.color, 0.85), 0.9);
+    const bottomLeftThick = { x: bottomLeft.x, y: bottomLeft.y + this.wallThickness };
+    const topLeftThick = { x: topLeft.x, y: topLeft.y + this.wallThickness };
+
+    graphics.fillStyle(this.darkenColor(style.color, 0.6), 1);
+    graphics.beginPath();
+    graphics.moveTo(topLeft.x, topLeft.y);
+    graphics.lineTo(bottomLeft.x, bottomLeft.y);
+    graphics.lineTo(bottomLeftThick.x, bottomLeftThick.y);
+    graphics.lineTo(topLeftThick.x, topLeftThick.y);
+    graphics.closePath();
+    graphics.fillPath();
+
+    graphics.fillStyle(this.darkenColor(style.color, 0.85), 1);
 
     graphics.beginPath();
     graphics.moveTo(bottom.x, bottom.y);
@@ -151,8 +191,5 @@ export class WallRenderer {
     graphics.lineTo(bottomLeft.x, bottomLeft.y);
     graphics.closePath();
     graphics.fillPath();
-
-    graphics.lineStyle(1, style.borderColor, 1);
-    graphics.strokePath();
   }
 }
