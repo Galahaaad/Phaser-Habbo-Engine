@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+.env.production
+
+# TypeScript
+*.tsbuildinfo
+
+# References & Documentation
+references/
+docs/
+!docs/demos/
+
+EXECUTIVE_SUMMARY.txt

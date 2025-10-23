@@ -1,0 +1,20 @@
+{
+  "name": "phaser-renderer",
+  "version": "0.1.0",
+  "description": "Habbo Client Renderer built with Phaser 3 and TypeScript",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "phaser": "^3.87.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3"
+  }
+}
