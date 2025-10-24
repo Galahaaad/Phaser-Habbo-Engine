@@ -5,6 +5,7 @@ export interface Tile {
   y: number;
   height: number;
   isBlocked: boolean;
+  walkable: boolean;
 }
 
 export enum RoomObjectCategory {
@@ -42,6 +43,7 @@ export interface RoomData {
   maxX: number;
   minY: number;
   maxY: number;
+  maxHeight: number;
   wallType: string;
   floorType: string;
   tiles: Tile[][];
