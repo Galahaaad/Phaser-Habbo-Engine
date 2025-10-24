@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { IsometricEngine } from '@engine/IsometricEngine';
-import { Tile } from '@data/types/RoomData';
+import { CubeRenderer } from '@engine/CubeRenderer';
+import { WallMesh, CubeFace } from '@data/types/MeshData';
 
 export interface WallStyle {
   id: string;
@@ -17,179 +18,97 @@ export const WALL_STYLES: Record<string, WallStyle> = {
 
 export class WallRenderer {
   private currentWallType: string = '101';
-  private wallHeight: number = 96;
-  private wallThickness: number = 13;
+  private wallThickness: number = 8;
+  private floorThickness: number = 8;
+  private baseWallHeight: number = 115;
+  private maxHeight: number = 0;
+  private scene: Phaser.Scene;
 
-  constructor(_scene: Phaser.Scene) {}
+  constructor(scene: Phaser.Scene) {
+    this.scene = scene;
+  }
 
   public setWallType(wallType: string): void {
     this.currentWallType = wallType;
   }
 
-  private darkenColor(color: number, factor: number = 0.8): number {
-    const r = (color >> 16) & 0xff;
-    const g = (color >> 8) & 0xff;
-    const b = color & 0xff;
-
-    return (
-      (Math.floor(r * factor) << 16) |
-      (Math.floor(g * factor) << 8) |
-      Math.floor(b * factor)
-    );
+  public setMaxHeight(maxHeight: number): void {
+    this.maxHeight = maxHeight;
   }
 
   public renderWalls(
     graphics: Phaser.GameObjects.Graphics,
-    tiles: Tile[][],
-    minX: number,
-    maxX: number,
-    minY: number,
-    maxY: number
+    wallMeshes: WallMesh[]
   ): void {
     const style = WALL_STYLES[this.currentWallType] || WALL_STYLES['101'];
+    const thicknessTiles = this.wallThickness / IsometricEngine.TILE_SCALE;
 
-    for (let y = minY; y <= maxY; y++) {
-      if (y === minY || y === maxY) {
-        for (let x = minX; x <= maxX; x++) {
-          if (y === minY) {
-            this.renderNorthWall(graphics, tiles[y][x], style);
-          }
-          if (y === maxY) {
-            this.renderSouthWall(graphics, tiles[y][x], style);
-          }
-        }
+    const sortedWalls = [...wallMeshes].sort((a, b) => {
+      if (a.direction !== b.direction) {
+        return a.direction === 'west' ? -1 : 1;
       }
+      const depthA = IsometricEngine.calculateWallDepth(a.position.x, a.position.y, 6);
+      const depthB = IsometricEngine.calculateWallDepth(b.position.x, b.position.y, 6);
+      return depthA - depthB;
+    });
+
+    for (const mesh of sortedWalls) {
+      let sizeX: number, sizeY: number;
+
+      if (mesh.direction === 'west') {
+        sizeX = thicknessTiles;
+        sizeY = mesh.length + (mesh.corner ? thicknessTiles : 0);
+      } else {
+        sizeX = mesh.length;
+        sizeY = thicknessTiles;
+      }
+
+      const wallHeightTiles = this.floorThickness / 32 - mesh.position.z + this.baseWallHeight / 32 + this.maxHeight;
+
+      const screenPos = this.calculateWallPosition(
+        mesh.position,
+        { x: sizeX, y: sizeY, z: wallHeightTiles },
+        mesh.direction,
+        mesh.length
+      );
+
+      const wallBottom = screenPos.y + wallHeightTiles * 32;
+      console.log(`[${mesh.direction.toUpperCase()}] pos(${mesh.position.x},${mesh.position.y}) len=${mesh.length} corner=${mesh.corner} screen(${screenPos.x.toFixed(0)}, ${screenPos.y.toFixed(0)}) bottom=${wallBottom.toFixed(0)} sizeY=${sizeY.toFixed(2)}`);
+      CubeRenderer.renderCube(graphics, {
+        position: mesh.position,
+        size: { x: sizeX, y: sizeY, z: wallHeightTiles },
+        color: style.color,
+        shadowMultipliers: {
+          [CubeFace.TOP]: 1.0,
+          [CubeFace.LEFT]: 0.8,
+          [CubeFace.RIGHT]: 0.71
+        },
+        screenPosition: screenPos
+      });
+
+    }
+  }
+
+  private calculateWallPosition(
+    position: { x: number; y: number; z: number },
+    size: { x: number; y: number; z: number },
+    direction: string,
+    length: number
+  ): { x: number; y: number } {
+    let result: { x: number; y: number };
+
+    if (direction === 'west') {
+      result = {
+        x: 32 * (position.x - (position.y + length - 1)) - this.wallThickness,
+        y: 16 * position.x + 16 * (position.y + length - 1) - 32 * (position.z + size.z) - this.floorThickness / 2
+      };
+    } else {
+      result = {
+        x: 32 * position.x - 32 * (position.y - 1),
+        y: 16 * position.x + 16 * (position.y - 1) - 32 * (position.z + size.z)
+      };
     }
 
-    for (let x = minX; x <= maxX; x++) {
-      if (x === minX) {
-        for (let y = minY; y <= maxY; y++) {
-          this.renderWestWall(graphics, tiles[y][x], style);
-        }
-      }
-      if (x === maxX) {
-        for (let y = minY; y <= maxY; y++) {
-          this.renderEastWall(graphics, tiles[y][x], style);
-        }
-      }
-    }
-  }
-
-  private renderNorthWall(graphics: Phaser.GameObjects.Graphics, tile: Tile, style: WallStyle): void {
-    const bottom = IsometricEngine.tileToScreen(tile.x, tile.y, tile.height);
-    const top = IsometricEngine.tileToScreen(tile.x, tile.y, tile.height + this.wallHeight / IsometricEngine.TILE_SCALE);
-
-    const bottomRight = IsometricEngine.tileToScreen(tile.x + 1, tile.y, tile.height);
-    const topRight = IsometricEngine.tileToScreen(tile.x + 1, tile.y, tile.height + this.wallHeight / IsometricEngine.TILE_SCALE);
-
-    const bottomRightThick = { x: bottomRight.x, y: bottomRight.y + this.wallThickness };
-    const topRightThick = { x: topRight.x, y: topRight.y + this.wallThickness };
-
-    graphics.fillStyle(this.darkenColor(style.color, 0.7), 1);
-    graphics.beginPath();
-    graphics.moveTo(topRight.x, topRight.y);
-    graphics.lineTo(bottomRight.x, bottomRight.y);
-    graphics.lineTo(bottomRightThick.x, bottomRightThick.y);
-    graphics.lineTo(topRightThick.x, topRightThick.y);
-    graphics.closePath();
-    graphics.fillPath();
-
-    graphics.fillStyle(style.color, 1);
-    graphics.beginPath();
-    graphics.moveTo(bottom.x, bottom.y);
-    graphics.lineTo(top.x, top.y);
-    graphics.lineTo(topRight.x, topRight.y);
-    graphics.lineTo(bottomRight.x, bottomRight.y);
-    graphics.closePath();
-    graphics.fillPath();
-  }
-
-  private renderWestWall(graphics: Phaser.GameObjects.Graphics, tile: Tile, style: WallStyle): void {
-    const bottom = IsometricEngine.tileToScreen(tile.x, tile.y, tile.height);
-    const top = IsometricEngine.tileToScreen(tile.x, tile.y, tile.height + this.wallHeight / IsometricEngine.TILE_SCALE);
-
-    const bottomLeft = IsometricEngine.tileToScreen(tile.x, tile.y + 1, tile.height);
-    const topLeft = IsometricEngine.tileToScreen(tile.x, tile.y + 1, tile.height + this.wallHeight / IsometricEngine.TILE_SCALE);
-
-    const bottomLeftThick = { x: bottomLeft.x, y: bottomLeft.y + this.wallThickness };
-    const topLeftThick = { x: topLeft.x, y: topLeft.y + this.wallThickness };
-
-    graphics.fillStyle(this.darkenColor(style.color, 0.6), 1);
-    graphics.beginPath();
-    graphics.moveTo(topLeft.x, topLeft.y);
-    graphics.lineTo(bottomLeft.x, bottomLeft.y);
-    graphics.lineTo(bottomLeftThick.x, bottomLeftThick.y);
-    graphics.lineTo(topLeftThick.x, topLeftThick.y);
-    graphics.closePath();
-    graphics.fillPath();
-
-    graphics.fillStyle(this.darkenColor(style.color, 0.85), 1);
-
-    graphics.beginPath();
-    graphics.moveTo(bottom.x, bottom.y);
-    graphics.lineTo(top.x, top.y);
-    graphics.lineTo(topLeft.x, topLeft.y);
-    graphics.lineTo(bottomLeft.x, bottomLeft.y);
-    graphics.closePath();
-    graphics.fillPath();
-  }
-
-  private renderEastWall(graphics: Phaser.GameObjects.Graphics, tile: Tile, style: WallStyle): void {
-    const bottom = IsometricEngine.tileToScreen(tile.x + 1, tile.y, tile.height);
-    const top = IsometricEngine.tileToScreen(tile.x + 1, tile.y, tile.height + this.wallHeight / IsometricEngine.TILE_SCALE);
-
-    const bottomRight = IsometricEngine.tileToScreen(tile.x + 1, tile.y + 1, tile.height);
-    const topRight = IsometricEngine.tileToScreen(tile.x + 1, tile.y + 1, tile.height + this.wallHeight / IsometricEngine.TILE_SCALE);
-
-    const bottomRightThick = { x: bottomRight.x, y: bottomRight.y + this.wallThickness };
-    const topRightThick = { x: topRight.x, y: topRight.y + this.wallThickness };
-
-    graphics.fillStyle(this.darkenColor(style.color, 0.7), 1);
-    graphics.beginPath();
-    graphics.moveTo(topRight.x, topRight.y);
-    graphics.lineTo(bottomRight.x, bottomRight.y);
-    graphics.lineTo(bottomRightThick.x, bottomRightThick.y);
-    graphics.lineTo(topRightThick.x, topRightThick.y);
-    graphics.closePath();
-    graphics.fillPath();
-
-    graphics.fillStyle(style.color, 1);
-    graphics.beginPath();
-    graphics.moveTo(bottom.x, bottom.y);
-    graphics.lineTo(top.x, top.y);
-    graphics.lineTo(topRight.x, topRight.y);
-    graphics.lineTo(bottomRight.x, bottomRight.y);
-    graphics.closePath();
-    graphics.fillPath();
-  }
-
-  private renderSouthWall(graphics: Phaser.GameObjects.Graphics, tile: Tile, style: WallStyle): void {
-    const bottom = IsometricEngine.tileToScreen(tile.x, tile.y + 1, tile.height);
-    const top = IsometricEngine.tileToScreen(tile.x, tile.y + 1, tile.height + this.wallHeight / IsometricEngine.TILE_SCALE);
-
-    const bottomLeft = IsometricEngine.tileToScreen(tile.x + 1, tile.y + 1, tile.height);
-    const topLeft = IsometricEngine.tileToScreen(tile.x + 1, tile.y + 1, tile.height + this.wallHeight / IsometricEngine.TILE_SCALE);
-
-    const bottomLeftThick = { x: bottomLeft.x, y: bottomLeft.y + this.wallThickness };
-    const topLeftThick = { x: topLeft.x, y: topLeft.y + this.wallThickness };
-
-    graphics.fillStyle(this.darkenColor(style.color, 0.6), 1);
-    graphics.beginPath();
-    graphics.moveTo(topLeft.x, topLeft.y);
-    graphics.lineTo(bottomLeft.x, bottomLeft.y);
-    graphics.lineTo(bottomLeftThick.x, bottomLeftThick.y);
-    graphics.lineTo(topLeftThick.x, topLeftThick.y);
-    graphics.closePath();
-    graphics.fillPath();
-
-    graphics.fillStyle(this.darkenColor(style.color, 0.85), 1);
-
-    graphics.beginPath();
-    graphics.moveTo(bottom.x, bottom.y);
-    graphics.lineTo(top.x, top.y);
-    graphics.lineTo(topLeft.x, topLeft.y);
-    graphics.lineTo(bottomLeft.x, bottomLeft.y);
-    graphics.closePath();
-    graphics.fillPath();
+    return result;
   }
 }
