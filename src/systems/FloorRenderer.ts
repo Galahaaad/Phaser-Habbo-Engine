@@ -47,8 +47,6 @@ export class FloorRenderer {
         y: 16 * mesh.position.x + 16 * (mesh.position.y + mesh.size.y - 1) - 32 * mesh.position.z
       };
 
-      console.log(`[FLOOR] pos(${mesh.position.x},${mesh.position.y},${mesh.position.z}) size(${mesh.size.x}x${mesh.size.y}) screen(${floorScreenPos.x}, ${floorScreenPos.y})`);
-
       CubeRenderer.renderCube(graphics, {
         position: mesh.position,
         size: {

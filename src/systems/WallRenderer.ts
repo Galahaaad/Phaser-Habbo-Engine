@@ -72,8 +72,6 @@ export class WallRenderer {
         mesh.length
       );
 
-      const wallBottom = screenPos.y + wallHeightTiles * 32;
-      console.log(`[${mesh.direction.toUpperCase()}] pos(${mesh.position.x},${mesh.position.y}) len=${mesh.length} corner=${mesh.corner} screen(${screenPos.x.toFixed(0)}, ${screenPos.y.toFixed(0)}) bottom=${wallBottom.toFixed(0)} sizeY=${sizeY.toFixed(2)}`);
       CubeRenderer.renderCube(graphics, {
         position: mesh.position,
         size: { x: sizeX, y: sizeY, z: wallHeightTiles },
