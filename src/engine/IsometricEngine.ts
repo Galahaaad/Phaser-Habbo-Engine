@@ -32,8 +32,8 @@ export class IsometricEngine {
     screenX: number,
     screenY: number
   ): { x: number; y: number } {
-    const localX = Math.floor(screenX / 64 + screenY / 32);
-    const localY = Math.floor(screenY / 32 - screenX / 64 - 0.01);
+    const localX = Math.round(screenX / 64 + screenY / 32);
+    const localY = Math.round(screenY / 32 - screenX / 64 + 0.5);
     return { x: localX, y: localY };
   }
 
