@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { IsometricEngine } from '@engine/IsometricEngine';
-import { Tile } from '@data/types/RoomData';
+import { CubeRenderer } from '@engine/CubeRenderer';
+import { TileMesh, CubeFace } from '@data/types/MeshData';
 
 export interface FloorStyle {
   id: string;
@@ -18,66 +19,64 @@ export const FLOOR_STYLES: Record<string, FloorStyle> = {
 
 export class FloorRenderer {
   private currentFloorType: string = '101';
+  private floorThickness: number = 8;
+  private scene: Phaser.Scene;
 
-  constructor(_scene: Phaser.Scene) {}
+  constructor(scene: Phaser.Scene) {
+    this.scene = scene;
+  }
 
   public setFloorType(floorType: string): void {
     this.currentFloorType = floorType;
   }
 
-  public renderTile(graphics: Phaser.GameObjects.Graphics, tile: Tile): void {
+  public renderFloor(
+    graphics: Phaser.GameObjects.Graphics,
+    tileMeshes: TileMesh[]
+  ): void {
     const style = FLOOR_STYLES[this.currentFloorType] || FLOOR_STYLES['101'];
 
-    const topLeft = IsometricEngine.tileToScreen(tile.x, tile.y, tile.height);
-    const topRight = IsometricEngine.tileToScreen(tile.x + 1, tile.y, tile.height);
-    const bottomRight = IsometricEngine.tileToScreen(tile.x + 1, tile.y + 1, tile.height);
-    const bottomLeft = IsometricEngine.tileToScreen(tile.x, tile.y + 1, tile.height);
+    for (const mesh of tileMeshes) {
+      const isAlternate = this.shouldUseAlternateColor(mesh.position.x, mesh.position.y, style.pattern);
+      const color = isAlternate ? style.color2 : style.color1;
 
-    const isAlternate = this.shouldUseAlternateColor(tile, style.pattern);
-    const fillColor = isAlternate ? style.color2 : style.color1;
+      const thicknessTiles = this.floorThickness / IsometricEngine.TILE_SCALE;
 
-    graphics.fillStyle(tile.isBlocked ? 0xff0000 : fillColor, tile.isBlocked ? 0.3 : 1);
+      const floorScreenPos = {
+        x: 32 * mesh.position.x - 32 * (mesh.position.y + mesh.size.y - 1),
+        y: 16 * mesh.position.x + 16 * (mesh.position.y + mesh.size.y - 1) - 32 * mesh.position.z
+      };
 
-    graphics.beginPath();
-    graphics.moveTo(topLeft.x, topLeft.y);
-    graphics.lineTo(topRight.x, topRight.y);
-    graphics.lineTo(bottomRight.x, bottomRight.y);
-    graphics.lineTo(bottomLeft.x, bottomLeft.y);
-    graphics.closePath();
-    graphics.fillPath();
+      console.log(`[FLOOR] pos(${mesh.position.x},${mesh.position.y},${mesh.position.z}) size(${mesh.size.x}x${mesh.size.y}) screen(${floorScreenPos.x}, ${floorScreenPos.y})`);
 
-    graphics.lineStyle(1, 0x000000, 0.2);
-    graphics.strokePath();
-
-    if (style.pattern === 'dotted') {
-      this.addDottedPattern(graphics, topLeft, topRight, bottomRight, bottomLeft);
+      CubeRenderer.renderCube(graphics, {
+        position: mesh.position,
+        size: {
+          x: mesh.size.x,
+          y: mesh.size.y,
+          z: thicknessTiles
+        },
+        color,
+        shadowMultipliers: {
+          [CubeFace.TOP]: 1.0,
+          [CubeFace.LEFT]: 0.7,
+          [CubeFace.RIGHT]: 0.6
+        },
+        screenPosition: floorScreenPos
+      });
     }
   }
 
-  private shouldUseAlternateColor(tile: Tile, pattern: string): boolean {
+  private shouldUseAlternateColor(x: number, y: number, pattern: string): boolean {
     switch (pattern) {
       case 'checkered':
-        return (tile.x + tile.y) % 2 === 0;
+        return (x + y) % 2 === 0;
       case 'striped':
-        return tile.x % 2 === 0;
+        return x % 2 === 0;
       case 'dotted':
         return false;
       default:
         return false;
     }
-  }
-
-  private addDottedPattern(
-    graphics: Phaser.GameObjects.Graphics,
-    topLeft: { x: number; y: number },
-    topRight: { x: number; y: number },
-    bottomRight: { x: number; y: number },
-    bottomLeft: { x: number; y: number }
-  ): void {
-    const centerX = (topLeft.x + topRight.x + bottomRight.x + bottomLeft.x) / 4;
-    const centerY = (topLeft.y + topRight.y + bottomRight.y + bottomLeft.y) / 4;
-
-    graphics.fillStyle(0xffffff, 0.3);
-    graphics.fillCircle(centerX, centerY, 3);
   }
 }
