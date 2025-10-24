@@ -156,7 +156,7 @@ export class HabboAvatarSprite {
   public walkTo(path: Vector3[]): void {
     if (path.length === 0) return;
 
-    this.currentPath = path.map(p => new Vector3(p.x + 0.5, p.y + 0.5, p.z));
+    this.currentPath = path.map(p => new Vector3(p.x, p.y, p.z));
     this.currentTarget = this.currentPath.shift() || null;
 
     if (this.currentTarget) {
@@ -248,11 +248,19 @@ export class HabboAvatarSprite {
   }
 
   private updateScreenPosition(): void {
-    const screenPos = IsometricEngine.tileToScreen(
-      this.position.x,
-      this.position.y,
+    const baseTileCorner = IsometricEngine.tileToScreen(
+      Math.floor(this.position.x),
+      Math.floor(this.position.y),
       this.position.z
     );
+
+    const fracX = this.position.x - Math.floor(this.position.x);
+    const fracY = this.position.y - Math.floor(this.position.y);
+
+    const screenPos = {
+      x: baseTileCorner.x + 32 + (fracX - fracY) * 32,
+      y: baseTileCorner.y + (fracX + fracY) * 16
+    };
 
     const isFlipped = (this.direction === 4 || this.direction === 5 || this.direction === 6);
     const MANUAL_OFFSET_X = isFlipped ? 30 : -35;
