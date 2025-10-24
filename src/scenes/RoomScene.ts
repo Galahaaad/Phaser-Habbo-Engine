@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { IsometricEngine } from '@engine/IsometricEngine';
+import { GreedyMesher } from '@engine/GreedyMesher';
 import { RoomData, Tile } from '@data/types/RoomData';
 import { HabboAvatarSprite } from '@entities/HabboAvatarSprite';
 import { PathFinder } from '@systems/PathFinder';
@@ -36,6 +37,7 @@ export class RoomScene extends Phaser.Scene {
 
   private loadRoomData(): void {
     const tiles: Tile[][] = [];
+    let maxHeight = 0;
 
     for (let y = 0; y < 10; y++) {
       tiles[y] = [];
@@ -44,8 +46,10 @@ export class RoomScene extends Phaser.Scene {
           x,
           y,
           height: 0,
-          isBlocked: false
+          isBlocked: false,
+          walkable: true
         };
+        maxHeight = Math.max(maxHeight, tiles[y][x].height);
       }
     }
 
@@ -56,6 +60,7 @@ export class RoomScene extends Phaser.Scene {
       maxX: 9,
       minY: 0,
       maxY: 9,
+      maxHeight,
       wallType: '101',
       floorType: '101',
       tiles,
@@ -246,23 +251,18 @@ export class RoomScene extends Phaser.Scene {
   private renderRoom(): void {
     const graphics = this.add.graphics();
 
-    this.wallRenderer.renderWalls(
-      graphics,
-      this.roomData.tiles,
-      this.roomData.minX,
-      this.roomData.maxX,
-      this.roomData.minY,
-      this.roomData.maxY
-    );
+    const mesher = new GreedyMesher(this.roomData.tiles);
+    const tileMeshes = mesher.getTileMeshes();
+    const wallMeshes = mesher.getWallMeshes();
 
-    for (let y = 0; y <= this.roomData.maxY; y++) {
-      for (let x = 0; x <= this.roomData.maxX; x++) {
-        const tile = this.roomData.tiles[y][x];
-        this.floorRenderer.renderTile(graphics, tile);
-      }
-    }
+    console.log(`[RoomScene] Greedy meshing: ${tileMeshes.length} tile meshes, ${wallMeshes.length} wall meshes`);
 
-    console.log('[RoomScene] Room rendered with textured floor and walls');
+    this.floorRenderer.renderFloor(graphics, tileMeshes);
+
+    this.wallRenderer.setMaxHeight(this.roomData.maxHeight);
+    this.wallRenderer.renderWalls(graphics, wallMeshes);
+
+    console.log('[RoomScene] Room rendered with single Graphics');
   }
 
   private addDebugInfo(): void {
