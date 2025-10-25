@@ -32,13 +32,20 @@ export class FloorRenderer {
 
   public renderFloor(
     graphics: Phaser.GameObjects.Graphics,
-    tileMeshes: TileMesh[]
+    tileMeshes: TileMesh[],
+    doorTile?: { x: number; y: number }
   ): void {
     const style = FLOOR_STYLES[this.currentFloorType] || FLOOR_STYLES['101'];
 
     for (const mesh of tileMeshes) {
+      const isDoorTile = doorTile &&
+        doorTile.x >= mesh.position.x &&
+        doorTile.x < mesh.position.x + mesh.size.x &&
+        doorTile.y >= mesh.position.y &&
+        doorTile.y < mesh.position.y + mesh.size.y;
+
       const isAlternate = this.shouldUseAlternateColor(mesh.position.x, mesh.position.y, style.pattern);
-      const color = isAlternate ? style.color2 : style.color1;
+      const color = isDoorTile ? 0xff0000 : (isAlternate ? style.color2 : style.color1);
 
       const thicknessTiles = this.floorThickness / IsometricEngine.TILE_SCALE;
 

@@ -24,7 +24,7 @@ export class MeshCache {
     return hashParts.join('-');
   }
 
-  public getMeshes(tiles: Tile[][]): { tileMeshes: TileMesh[]; wallMeshes: WallMesh[] } {
+  public getMeshes(tiles: Tile[][], doorTile?: { x: number; y: number }): { tileMeshes: TileMesh[]; wallMeshes: WallMesh[] } {
     const hash = this.generateHash(tiles);
 
     if (this.cache && this.cache.hash === hash) {
@@ -34,7 +34,7 @@ export class MeshCache {
       };
     }
 
-    const mesher = new GreedyMesher(tiles);
+    const mesher = new GreedyMesher(tiles, doorTile);
     const tileMeshes = mesher.getTileMeshes();
     const wallMeshes = mesher.getWallMeshes();
 

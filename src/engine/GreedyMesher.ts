@@ -6,11 +6,13 @@ export class GreedyMesher {
   private tiles: Tile[][];
   private width: number;
   private height: number;
+  private doorTile?: { x: number; y: number };
 
-  constructor(tiles: Tile[][]) {
+  constructor(tiles: Tile[][], doorTile?: { x: number; y: number }) {
     this.tiles = tiles;
     this.height = tiles.length;
     this.width = tiles[0]?.length || 0;
+    this.doorTile = doorTile;
   }
 
   public getTileMeshes(): TileMesh[] {
@@ -119,26 +121,67 @@ export class GreedyMesher {
     return meshes;
   }
 
+  private isDoorTile(x: number, y: number): boolean {
+    return this.doorTile !== undefined && this.doorTile.x === x && this.doorTile.y === y;
+  }
+
+  private isTileWalkableAndNotDoor(x: number, y: number): boolean {
+    if (x < 0 || y < 0 || y >= this.height || x >= this.width) return false;
+    const tile = this.tiles[y]?.[x];
+    return tile !== undefined && tile.walkable && !this.isDoorTile(x, y);
+  }
+
+  private shouldHaveNorthWall(x: number, y: number): boolean {
+    if (this.isDoorTile(x, y)) return false;
+    const tile = this.tiles[y]?.[x];
+    if (!tile || !tile.walkable) return false;
+
+    for (let i = y - 1; i >= 0; i--) {
+      for (let j = x; j >= 0; j--) {
+        if (this.isTileWalkableAndNotDoor(x, i)) return false;
+        if (this.isTileWalkableAndNotDoor(j, i)) return false;
+      }
+    }
+    return true;
+  }
+
+  private shouldHaveWestWall(x: number, y: number): boolean {
+    if (this.isDoorTile(x, y)) return false;
+    const tile = this.tiles[y]?.[x];
+    if (!tile || !tile.walkable) return false;
+
+    for (let i = x - 1; i >= 0; i--) {
+      for (let j = y; j >= 0; j--) {
+        if (this.isTileWalkableAndNotDoor(i, y)) return false;
+        if (this.isTileWalkableAndNotDoor(i, j)) return false;
+      }
+    }
+    return true;
+  }
+
   public getWallMeshes(): WallMesh[] {
     const meshes: WallMesh[] = [];
     const rowWallSizes: Map<string, Vector3D | undefined> = new Map();
     const columnWallSizes: Map<string, Vector3D | undefined> = new Map();
 
+    console.log(`[GreedyMesher] Generating walls with scuti logic, door at (${this.doorTile?.x}, ${this.doorTile?.y})`);
+
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {
         const tile = this.tiles[y][x];
+        if (!tile || !tile.walkable || this.isDoorTile(x, y)) continue;
+
         const key = `${x},${y}`;
+        const needsNorthWall = this.shouldHaveNorthWall(x, y);
+        const needsWestWall = this.shouldHaveWestWall(x, y);
 
-        if (tile && tile.walkable) {
-          const isLeftEdge = x === 0 || !this.tiles[y][x - 1]?.walkable;
-          const isTopEdge = y === 0 || !this.tiles[y - 1]?.[x]?.walkable;
-
-          if (isTopEdge) {
-            rowWallSizes.set(key, { x: 1, y: 1, z: tile.height });
-          }
-          if (isLeftEdge) {
-            columnWallSizes.set(key, { x: 1, y: 1, z: tile.height });
-          }
+        if (needsNorthWall) {
+          console.log(`[GreedyMesher] Tile (${x},${y}) needs NORTH wall`);
+          rowWallSizes.set(key, { x: 1, y: 1, z: tile.height });
+        }
+        if (needsWestWall) {
+          console.log(`[GreedyMesher] Tile (${x},${y}) needs WEST wall`);
+          columnWallSizes.set(key, { x: 1, y: 1, z: tile.height });
         }
       }
     }
@@ -214,7 +257,9 @@ export class GreedyMesher {
       }
     });
 
-    meshes.sort((a, b) => {
+    const splitMeshes = this.splitWallMeshesAtDoor(meshes);
+
+    splitMeshes.sort((a, b) => {
       const depthA = IsometricEngine.calculateWallDepth(
         a.position.x,
         a.position.y,
@@ -228,6 +273,83 @@ export class GreedyMesher {
       return depthA - depthB;
     });
 
-    return meshes;
+    return splitMeshes;
+  }
+
+  private splitWallMeshesAtDoor(meshes: WallMesh[]): WallMesh[] {
+    if (!this.doorTile) return meshes;
+
+    console.log(`[GreedyMesher] Splitting walls at door tile (${this.doorTile.x}, ${this.doorTile.y})`);
+    console.log(`[GreedyMesher] Input meshes:`, meshes.length);
+
+    const result: WallMesh[] = [];
+
+    for (const mesh of meshes) {
+      const { position, length, direction } = mesh;
+      let doorInMesh = false;
+
+      if (direction === 'north') {
+        const startX = position.x;
+        const endX = position.x + length - 1;
+        const meshY = position.y;
+
+        if (meshY === this.doorTile.y && this.doorTile.x >= startX && this.doorTile.x <= endX) {
+          console.log(`[GreedyMesher] Splitting NORTH wall at y=${meshY} from x=${startX} to x=${endX}`);
+          doorInMesh = true;
+
+          if (this.doorTile.x > startX) {
+            result.push({
+              position: { x: startX, y: meshY, z: position.z },
+              length: this.doorTile.x - startX,
+              direction: 'north',
+              corner: mesh.corner
+            });
+          }
+
+          if (this.doorTile.x < endX) {
+            result.push({
+              position: { x: this.doorTile.x + 1, y: meshY, z: position.z },
+              length: endX - this.doorTile.x,
+              direction: 'north',
+              corner: false
+            });
+          }
+        }
+      } else if (direction === 'west') {
+        const meshX = position.x;
+        const startY = position.y;
+        const endY = position.y + length - 1;
+
+        if (meshX === this.doorTile.x && this.doorTile.y >= startY && this.doorTile.y <= endY) {
+          console.log(`[GreedyMesher] Splitting WEST wall at x=${meshX} from y=${startY} to y=${endY}`);
+          doorInMesh = true;
+
+          if (this.doorTile.y > startY) {
+            result.push({
+              position: { x: meshX, y: startY, z: position.z },
+              length: this.doorTile.y - startY,
+              direction: 'west',
+              corner: mesh.corner
+            });
+          }
+
+          if (this.doorTile.y < endY) {
+            result.push({
+              position: { x: meshX, y: this.doorTile.y + 1, z: position.z },
+              length: endY - this.doorTile.y,
+              direction: 'west',
+              corner: false
+            });
+          }
+        }
+      }
+
+      if (!doorInMesh) {
+        result.push(mesh);
+      }
+    }
+
+    console.log(`[GreedyMesher] Output meshes after split:`, result.length);
+    return result;
   }
 }

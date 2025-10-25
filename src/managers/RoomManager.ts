@@ -41,6 +41,8 @@ export class RoomManager {
       }
     }
 
+    const doorTile = this.calculateDoorTile(tiles);
+
     return {
       id: 1,
       name: 'Wall Test Room',
@@ -51,10 +53,37 @@ export class RoomManager {
       maxHeight,
       wallType: '101',
       floorType: '101',
+      doorTile,
       tiles,
       furniture: [],
       avatars: []
     };
+  }
+
+  private calculateDoorTile(tiles: Tile[][]): { x: number; y: number } | undefined {
+    for (let y = 0; y < tiles.length; y++) {
+      for (let x = 0; x < tiles[y].length; x++) {
+        const topTile = y > 0 && tiles[y - 1][x].walkable;
+        const topLeftTile = y > 0 && x > 0 && tiles[y - 1][x - 1].walkable;
+        const midLeftTile = x > 0 && tiles[y][x - 1].walkable;
+        const botLeftTile = y < tiles.length - 1 && x > 0 && tiles[y + 1][x - 1].walkable;
+        const botTile = y < tiles.length - 1 && tiles[y + 1][x].walkable;
+        const midTile = tiles[y][x].walkable;
+
+        if (
+          !topTile &&
+          !topLeftTile &&
+          !midLeftTile &&
+          !botLeftTile &&
+          !botTile &&
+          midTile
+        ) {
+          console.log(`[RoomManager] Door tile detected at: (${x}, ${y})`);
+          return { x, y };
+        }
+      }
+    }
+    return undefined;
   }
 
   public getRoomData(): RoomData {

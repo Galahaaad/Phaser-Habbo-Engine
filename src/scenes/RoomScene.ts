@@ -4,6 +4,7 @@ import { HabboAvatarSprite } from '@entities/HabboAvatarSprite';
 import { PathFinder } from '@systems/PathFinder';
 import { FloorRenderer } from '@systems/FloorRenderer';
 import { WallRenderer } from '@systems/WallRenderer';
+import { DoorRenderer } from '@systems/DoorRenderer';
 import { RoomManager } from '@managers/RoomManager';
 import { InputManager, TilePosition } from '@managers/InputManager';
 import { CameraManager } from '@managers/CameraManager';
@@ -20,7 +21,9 @@ export class RoomScene extends Phaser.Scene {
   private pathFinder!: PathFinder;
   private floorRenderer!: FloorRenderer;
   private wallRenderer!: WallRenderer;
+  private doorRenderer!: DoorRenderer;
   private hoverGraphics!: Phaser.GameObjects.Graphics;
+  private wallGraphicsObject?: Phaser.GameObjects.Graphics;
 
   constructor() {
     super({ key: 'RoomScene' });
@@ -58,6 +61,8 @@ export class RoomScene extends Phaser.Scene {
 
     this.wallRenderer = new WallRenderer(this);
     this.wallRenderer.setWallType('101');
+
+    this.doorRenderer = new DoorRenderer(this);
 
     this.hoverGraphics = this.add.graphics();
     this.hoverGraphics.setDepth(998);
@@ -124,7 +129,10 @@ export class RoomScene extends Phaser.Scene {
   }
 
   private handleTileClick(tile: TilePosition): void {
+    console.log(`[RoomScene] Tile clicked: (${tile.x}, ${tile.y})`);
+
     if (!this.roomManager.isTileWalkable(tile.x, tile.y)) {
+      console.log(`[RoomScene] Tile (${tile.x}, ${tile.y}) is not walkable`);
       return;
     }
 
@@ -176,19 +184,58 @@ export class RoomScene extends Phaser.Scene {
     const roomData = this.roomManager.getRoomData();
 
     const startTime = performance.now();
-    const { tileMeshes, wallMeshes } = this.meshCache.getMeshes(roomData.tiles);
+    const { tileMeshes, wallMeshes } = this.meshCache.getMeshes(roomData.tiles, roomData.doorTile);
     const meshTime = performance.now() - startTime;
 
     console.log(`[RoomScene] Greedy meshing: ${tileMeshes.length} tile meshes, ${wallMeshes.length} wall meshes (${meshTime.toFixed(2)}ms, cached: ${this.meshCache.isCached()})`);
 
-    this.floorRenderer.renderFloor(graphics, tileMeshes);
+    this.floorRenderer.renderFloor(graphics, tileMeshes, roomData.doorTile);
 
+    if (this.wallGraphicsObject) {
+      this.wallGraphicsObject.destroy();
+    }
+    this.wallGraphicsObject = this.add.graphics();
     this.wallRenderer.setMaxHeight(roomData.maxHeight);
-    this.wallRenderer.renderWalls(graphics, wallMeshes);
+    this.wallRenderer.renderWalls(this.wallGraphicsObject, wallMeshes);
+
+    if (roomData.doorTile) {
+      const doorTile = this.roomManager.getTile(roomData.doorTile.x, roomData.doorTile.y);
+      if (doorTile) {
+        const doorMaskGraphics = this.createDoorMaskGraphics(roomData.doorTile.x, roomData.doorTile.y, doorTile.height);
+        const geometryMask = doorMaskGraphics.createGeometryMask();
+        geometryMask.invertAlpha = true;
+        this.wallGraphicsObject.setMask(geometryMask);
+        console.log(`[RoomScene] Door hole created with inverted GeometryMask at (${roomData.doorTile.x}, ${roomData.doorTile.y})`);
+      }
+    }
 
     this.renderTileDebug();
 
-    console.log('[RoomScene] Room rendered with single Graphics');
+    console.log('[RoomScene] Room rendered with GeometryMask invertAlpha');
+  }
+
+  private createDoorMaskGraphics(doorX: number, doorY: number, doorZ: number): Phaser.GameObjects.Graphics {
+    const doorHeight = 92;
+    const tileBase = {
+      x: 32 * (doorX + 1) - 32 * doorY,
+      y: 16 * (doorX + 1) + 16 * doorY - 32 * doorZ
+    };
+
+    const westCorner = { x: tileBase.x, y: tileBase.y };
+    const northCorner = { x: tileBase.x + 32, y: tileBase.y - 16 };
+
+    const doorMaskGraphics = this.add.graphics();
+    doorMaskGraphics.fillStyle(0xffffff, 1);
+    doorMaskGraphics.beginPath();
+    doorMaskGraphics.moveTo(westCorner.x, westCorner.y - doorHeight);
+    doorMaskGraphics.lineTo(northCorner.x, northCorner.y - doorHeight);
+    doorMaskGraphics.lineTo(northCorner.x, northCorner.y);
+    doorMaskGraphics.lineTo(westCorner.x, westCorner.y);
+    doorMaskGraphics.closePath();
+    doorMaskGraphics.fillPath();
+    doorMaskGraphics.setVisible(false);
+
+    return doorMaskGraphics;
   }
 
   private renderTileDebug(): void {

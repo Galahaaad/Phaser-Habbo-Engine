@@ -46,6 +46,7 @@ export interface RoomData {
   maxHeight: number;
   wallType: string;
   floorType: string;
+  doorTile?: { x: number; y: number };
   tiles: Tile[][];
   furniture: FurniData[];
   avatars: AvatarData[];
