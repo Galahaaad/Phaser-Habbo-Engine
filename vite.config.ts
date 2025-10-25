@@ -1,7 +1,9 @@
 import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig({
+  plugins: [react()],
   optimizeDeps: {
     exclude: ['references']
   },
@@ -15,6 +17,8 @@ export default defineConfig({
       '@managers': path.resolve(__dirname, './src/managers'),
       '@utils': path.resolve(__dirname, './src/utils'),
       '@data': path.resolve(__dirname, './src/data'),
+      '@core': path.resolve(__dirname, './src/core'),
+      '@ui': path.resolve(__dirname, './src/ui'),
     }
   },
   server: {
