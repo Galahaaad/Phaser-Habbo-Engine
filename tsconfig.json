@@ -29,6 +29,7 @@
       "@scenes/*": ["src/scenes/*"],
       "@systems/*": ["src/systems/*"],
       "@managers/*": ["src/managers/*"],
+      "@utils/*": ["src/utils/*"],
       "@data/*": ["src/data/*"]
     }
   },

@@ -2,6 +2,9 @@ import { defineConfig } from 'vite';
 import path from 'path';
 
 export default defineConfig({
+  optimizeDeps: {
+    exclude: ['references']
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -10,12 +13,16 @@ export default defineConfig({
       '@scenes': path.resolve(__dirname, './src/scenes'),
       '@systems': path.resolve(__dirname, './src/systems'),
       '@managers': path.resolve(__dirname, './src/managers'),
+      '@utils': path.resolve(__dirname, './src/utils'),
       '@data': path.resolve(__dirname, './src/data'),
     }
   },
   server: {
     port: 3000,
-    open: true
+    open: true,
+    fs: {
+      deny: ['./**/references/**']
+    }
   },
   build: {
     outDir: 'dist',
