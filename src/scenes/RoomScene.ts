@@ -8,6 +8,7 @@ import { RoomManager } from '@managers/RoomManager';
 import { InputManager, TilePosition } from '@managers/InputManager';
 import { CameraManager } from '@managers/CameraManager';
 import { MeshCache } from '@/utils/MeshCache';
+import { useGameStore } from '@core/store';
 
 export class RoomScene extends Phaser.Scene {
   private roomManager!: RoomManager;
@@ -31,7 +32,10 @@ export class RoomScene extends Phaser.Scene {
     this.roomManager = new RoomManager();
     this.meshCache = new MeshCache();
 
-    console.log('[RoomScene] Loaded room data:', this.roomManager.getRoomData());
+    const roomData = this.roomManager.getRoomData();
+    useGameStore.getState().setRoomName(roomData.name);
+
+    console.log('[RoomScene] Loaded room data:', roomData);
   }
 
   public create(): void {
@@ -131,6 +135,13 @@ export class RoomScene extends Phaser.Scene {
     if (path) {
       this.avatar.walkTo(path);
       this.highlightTile(tile.x, tile.y);
+
+      useGameStore.getState().setAvatarMoving(true);
+      useGameStore.getState().setAvatarPosition({
+        x: tile.x,
+        y: tile.y,
+        z: this.roomManager.getTile(tile.x, tile.y)?.height || 0
+      });
     }
   }
 
@@ -248,6 +259,13 @@ export class RoomScene extends Phaser.Scene {
   public update(time: number, delta: number): void {
     if (this.avatar) {
       this.avatar.update(time, delta);
+
+      const isMoving = this.avatar.isMoving();
+      const storeMovingState = useGameStore.getState().isAvatarMoving;
+
+      if (isMoving !== storeMovingState) {
+        useGameStore.getState().setAvatarMoving(isMoving);
+      }
     }
 
     this.inputManager.update();
