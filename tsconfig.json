@@ -28,6 +28,7 @@
       "@entities/*": ["src/entities/*"],
       "@scenes/*": ["src/scenes/*"],
       "@systems/*": ["src/systems/*"],
+      "@managers/*": ["src/managers/*"],
       "@data/*": ["src/data/*"]
     }
   },

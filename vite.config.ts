@@ -9,6 +9,7 @@ export default defineConfig({
       '@entities': path.resolve(__dirname, './src/entities'),
       '@scenes': path.resolve(__dirname, './src/scenes'),
       '@systems': path.resolve(__dirname, './src/systems'),
+      '@managers': path.resolve(__dirname, './src/managers'),
       '@data': path.resolve(__dirname, './src/data'),
     }
   },
