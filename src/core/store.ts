@@ -24,6 +24,9 @@ interface GameStore {
   chatMessages: ChatMessage[];
   isChatFocused: boolean;
 
+  showReactDebugPanel: boolean;
+  showPhaserDebugPanel: boolean;
+
   setRoomId: (id: string) => void;
   setRoomName: (name: string) => void;
 
@@ -33,6 +36,9 @@ interface GameStore {
   addChatMessage: (message: ChatMessage) => void;
   clearChatMessages: () => void;
   setChatFocused: (focused: boolean) => void;
+
+  toggleReactDebugPanel: () => void;
+  togglePhaserDebugPanel: () => void;
 
   navigateToRoom: (roomId: string) => void;
 }
@@ -47,6 +53,9 @@ export const useGameStore = create<GameStore>((set) => ({
   chatMessages: [],
   isChatFocused: false,
 
+  showReactDebugPanel: true,
+  showPhaserDebugPanel: true,
+
   setRoomId: (id) => set({ roomId: id }),
   setRoomName: (name) => set({ roomName: name }),
 
@@ -58,6 +67,13 @@ export const useGameStore = create<GameStore>((set) => ({
   })),
   clearChatMessages: () => set({ chatMessages: [] }),
   setChatFocused: (focused) => set({ isChatFocused: focused }),
+
+  toggleReactDebugPanel: () => set((state) => ({
+    showReactDebugPanel: !state.showReactDebugPanel
+  })),
+  togglePhaserDebugPanel: () => set((state) => ({
+    showPhaserDebugPanel: !state.showPhaserDebugPanel
+  })),
 
   navigateToRoom: (roomId) => {
     set({ roomId, chatMessages: [] });
