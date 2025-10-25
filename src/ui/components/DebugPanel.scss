@@ -1,0 +1,75 @@
+.debug-panel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 2px solid #00ff00;
+  border-radius: 8px;
+  padding: 16px;
+  min-width: 280px;
+  font-family: 'Courier New', monospace;
+  color: #00ff00;
+  box-shadow: 0 4px 20px rgba(0, 255, 0, 0.3);
+
+  h3 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid #00ff00;
+    padding-bottom: 8px;
+  }
+
+  .debug-info {
+    margin-bottom: 12px;
+
+    p {
+      margin: 6px 0;
+      font-size: 12px;
+      line-height: 1.4;
+
+      strong {
+        color: #0ff;
+      }
+
+      .moving {
+        color: #ff0;
+        animation: blink 1s infinite;
+      }
+    }
+  }
+
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: #0f0;
+    padding-top: 8px;
+    border-top: 1px solid rgba(0, 255, 0, 0.3);
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      background: #0f0;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 4px #0f0;
+  }
+  50% {
+    opacity: 0.5;
+    box-shadow: 0 0 8px #0f0;
+  }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
