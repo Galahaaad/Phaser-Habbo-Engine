@@ -1,25 +1,24 @@
 import Phaser from 'phaser';
 import { IsometricEngine } from '@engine/IsometricEngine';
 import { GreedyMesher } from '@engine/GreedyMesher';
-import { RoomData, Tile } from '@data/types/RoomData';
 import { HabboAvatarSprite } from '@entities/HabboAvatarSprite';
 import { PathFinder } from '@systems/PathFinder';
 import { FloorRenderer } from '@systems/FloorRenderer';
 import { WallRenderer } from '@systems/WallRenderer';
+import { RoomManager } from '@managers/RoomManager';
+import { InputManager, TilePosition } from '@managers/InputManager';
+import { CameraManager } from '@managers/CameraManager';
 
 export class RoomScene extends Phaser.Scene {
-  private roomData!: RoomData;
+  private roomManager!: RoomManager;
+  private inputManager!: InputManager;
+  private cameraManager!: CameraManager;
+
   private avatar!: HabboAvatarSprite;
   private pathFinder!: PathFinder;
   private floorRenderer!: FloorRenderer;
   private wallRenderer!: WallRenderer;
-  private cameraControls!: {
-    isDragging: boolean;
-    dragStartX: number;
-    dragStartY: number;
-  };
   private hoverGraphics!: Phaser.GameObjects.Graphics;
-  private currentHoverTile: { x: number; y: number } | null = null;
 
   constructor() {
     super({ key: 'RoomScene' });
@@ -28,58 +27,26 @@ export class RoomScene extends Phaser.Scene {
   public init(): void {
     console.log('[RoomScene] Initializing room...');
 
-    this.cameraControls = {
-      isDragging: false,
-      dragStartX: 0,
-      dragStartY: 0
-    };
-
-    this.loadRoomData();
-  }
-
-  private loadRoomData(): void {
-    const tiles: Tile[][] = [];
-    let maxHeight = 0;
-
-    for (let y = 0; y < 10; y++) {
-      tiles[y] = [];
-      for (let x = 0; x < 10; x++) {
-        tiles[y][x] = {
-          x,
-          y,
-          height: 0,
-          isBlocked: false,
-          walkable: true
-        };
-        maxHeight = Math.max(maxHeight, tiles[y][x].height);
-      }
-    }
-
-    this.roomData = {
-      id: 1,
-      name: 'Test Room',
-      minX: 0,
-      maxX: 9,
-      minY: 0,
-      maxY: 9,
-      maxHeight,
-      wallType: '101',
-      floorType: '101',
-      tiles,
-      furniture: [],
-      avatars: []
-    };
-
-    console.log('[RoomScene] Loaded room data:', this.roomData);
+    this.roomManager = new RoomManager();
+    console.log('[RoomScene] Loaded room data:', this.roomManager.getRoomData());
   }
 
   public create(): void {
     console.log('[RoomScene] Creating room visualization...');
 
-    this.cameras.main.setBackgroundColor('#87CEEB');
+    this.cameraManager = new CameraManager(this);
+    this.cameraManager.setBackgroundColor('#87CEEB');
+
+    this.inputManager = new InputManager(this, this.roomManager);
 
     this.createAvatarAtlas();
+    this.setupRenderers();
+    this.setupAvatar();
+    this.setupInputCallbacks();
+    this.addDebugInfo();
+  }
 
+  private setupRenderers(): void {
     this.floorRenderer = new FloorRenderer(this);
     this.floorRenderer.setFloorType('101');
 
@@ -89,18 +56,24 @@ export class RoomScene extends Phaser.Scene {
     this.hoverGraphics = this.add.graphics();
     this.hoverGraphics.setDepth(998);
 
-    this.setupCamera();
-    this.setupControls();
+    const centerPos = this.roomManager.getCenterPosition();
+    this.cameraManager.centerOn(centerPos.x, centerPos.y, 0);
+
     this.renderRoom();
+  }
 
-    this.pathFinder = new PathFinder(this.roomData.tiles, this.roomData.maxX, this.roomData.maxY);
+  private setupAvatar(): void {
+    const roomData = this.roomManager.getRoomData();
+    this.pathFinder = new PathFinder(roomData.tiles, roomData.maxX, roomData.maxY);
 
-    const startX = (this.roomData.minX + this.roomData.maxX) / 2;
-    const startY = (this.roomData.minY + this.roomData.maxY) / 2;
-    console.log(`[RoomScene] Creating avatar at tile (${startX}, ${startY})`);
-    this.avatar = new HabboAvatarSprite(this, 1, 'User_Avatar', startX, startY, 0);
+    const centerPos = this.roomManager.getCenterPosition();
+    console.log(`[RoomScene] Creating avatar at tile (${centerPos.x}, ${centerPos.y})`);
+    this.avatar = new HabboAvatarSprite(this, 1, 'User_Avatar', centerPos.x, centerPos.y, 0);
+  }
 
-    this.addDebugInfo();
+  private setupInputCallbacks(): void {
+    this.inputManager.onTileClick((tile) => this.handleTileClick(tile));
+    this.inputManager.onTileHover((tile) => this.handleTileHover(tile));
   }
 
   private createAvatarAtlas(): void {
@@ -144,112 +117,25 @@ export class RoomScene extends Phaser.Scene {
     console.log('[RoomScene] Avatar atlas created with', Object.keys(frames).length, 'frames');
   }
 
-  private setupCamera(): void {
-    const camera = this.cameras.main;
-
-    const centerX = (this.roomData.minX + this.roomData.maxX) / 2;
-    const centerY = (this.roomData.minY + this.roomData.maxY) / 2;
-
-    const screenCenter = IsometricEngine.tileToScreen(centerX, centerY, 0);
-
-    camera.centerOn(screenCenter.x, screenCenter.y);
-    camera.setZoom(1);
-
-    console.log('[RoomScene] Camera centered at:', screenCenter);
-  }
-
-  private setupControls(): void {
-    this.input.on('wheel', (_pointer: any, _gameObjects: any, _deltaX: number, deltaY: number) => {
-      const camera = this.cameras.main;
-      const zoomAmount = deltaY > 0 ? -0.1 : 0.1;
-      const newZoom = Phaser.Math.Clamp(camera.zoom + zoomAmount, 0.5, 2);
-      camera.setZoom(newZoom);
-    });
-
-    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      if (pointer.leftButtonDown()) {
-        this.cameraControls.isDragging = true;
-        this.cameraControls.dragStartX = pointer.x;
-        this.cameraControls.dragStartY = pointer.y;
-      }
-    });
-
-    this.input.on('pointerup', (pointer: Phaser.Input.Pointer) => {
-      const dragDistance = Math.sqrt(
-        Math.pow(pointer.x - this.cameraControls.dragStartX, 2) +
-        Math.pow(pointer.y - this.cameraControls.dragStartY, 2)
-      );
-
-      if (dragDistance < 5 && pointer.leftButtonReleased()) {
-        this.onTileClick(pointer);
-      }
-
-      this.cameraControls.isDragging = false;
-    });
-
-    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
-      if (this.cameraControls.isDragging) {
-        const camera = this.cameras.main;
-        const deltaX = pointer.x - this.cameraControls.dragStartX;
-        const deltaY = pointer.y - this.cameraControls.dragStartY;
-
-        camera.scrollX -= deltaX / camera.zoom;
-        camera.scrollY -= deltaY / camera.zoom;
-
-        this.cameraControls.dragStartX = pointer.x;
-        this.cameraControls.dragStartY = pointer.y;
-      }
-    });
-
-    console.log('[RoomScene] Controls setup complete');
-  }
-
-  private getTileAtScreenPosition(worldX: number, worldY: number): { x: number; y: number } | null {
-    for (let testY = this.roomData.maxY; testY >= 0; testY--) {
-      for (let testX = this.roomData.maxX; testX >= 0; testX--) {
-        const tile = this.roomData.tiles[testY][testX];
-        if (!tile.walkable) continue;
-
-        const tileScreen = IsometricEngine.tileToScreen(testX, testY, tile.height);
-        const centerX = tileScreen.x + 32;
-        const centerY = tileScreen.y;
-
-        const dx = worldX - centerX;
-        const dy = worldY - centerY;
-        const diamondDist = Math.abs(dx / 32) + Math.abs(dy / 16);
-
-        if (diamondDist <= 1.05) {
-          return { x: testX, y: testY };
-        }
-      }
-    }
-
-    return null;
-  }
-
-  private onTileClick(pointer: Phaser.Input.Pointer): void {
-    const worldX = pointer.worldX;
-    const worldY = pointer.worldY;
-
-    const clickedTile = this.getTileAtScreenPosition(worldX, worldY);
-
-    if (!clickedTile) {
-      return;
-    }
-
-    const tileX = clickedTile.x;
-    const tileY = clickedTile.y;
-
-    if (this.roomData.tiles[tileY][tileX].isBlocked) {
+  private handleTileClick(tile: TilePosition): void {
+    if (!this.roomManager.isTileWalkable(tile.x, tile.y)) {
       return;
     }
 
     const avatarPos = this.avatar.getTilePosition();
-    const path = this.pathFinder.findPath(avatarPos.x, avatarPos.y, tileX, tileY);
+    const path = this.pathFinder.findPath(avatarPos.x, avatarPos.y, tile.x, tile.y);
 
     if (path) {
       this.avatar.walkTo(path);
-      this.highlightTile(tileX, tileY);
+      this.highlightTile(tile.x, tile.y);
+    }
+  }
+
+  private handleTileHover(tile: TilePosition | null): void {
+    if (tile) {
+      this.renderHoverTile(tile.x, tile.y);
+    } else {
+      this.hoverGraphics.clear();
     }
   }
 
@@ -274,8 +160,9 @@ export class RoomScene extends Phaser.Scene {
 
   private renderRoom(): void {
     const graphics = this.add.graphics();
+    const roomData = this.roomManager.getRoomData();
 
-    const mesher = new GreedyMesher(this.roomData.tiles);
+    const mesher = new GreedyMesher(roomData.tiles);
     const tileMeshes = mesher.getTileMeshes();
     const wallMeshes = mesher.getWallMeshes();
 
@@ -283,7 +170,7 @@ export class RoomScene extends Phaser.Scene {
 
     this.floorRenderer.renderFloor(graphics, tileMeshes);
 
-    this.wallRenderer.setMaxHeight(this.roomData.maxHeight);
+    this.wallRenderer.setMaxHeight(roomData.maxHeight);
     this.wallRenderer.renderWalls(graphics, wallMeshes);
 
     this.renderTileDebug();
@@ -294,11 +181,12 @@ export class RoomScene extends Phaser.Scene {
   private renderTileDebug(): void {
     const debugGraphics = this.add.graphics();
     debugGraphics.setDepth(10000);
+    const roomData = this.roomManager.getRoomData();
 
-    for (let y = 0; y <= this.roomData.maxY; y++) {
-      for (let x = 0; x <= this.roomData.maxX; x++) {
-        const tile = this.roomData.tiles[y][x];
-        if (!tile.walkable) continue;
+    for (let y = 0; y <= roomData.maxY; y++) {
+      for (let x = 0; x <= roomData.maxX; x++) {
+        const tile = this.roomManager.getTile(x, y);
+        if (!tile || !tile.walkable) continue;
 
         const tileToScreenPos = IsometricEngine.tileToScreen(x, y, tile.height);
 
@@ -310,22 +198,6 @@ export class RoomScene extends Phaser.Scene {
         debugGraphics.lineTo(tileToScreenPos.x + 32, tileToScreenPos.y + 16);
         debugGraphics.closePath();
         debugGraphics.strokePath();
-
-        // RED DIAMONDS: Source of truth for tile positions
-        // debugGraphics.lineStyle(2, 0xff0000, 0.8);
-        // debugGraphics.beginPath();
-        // debugGraphics.moveTo(tileToScreenPos.x, tileToScreenPos.y);
-        // debugGraphics.lineTo(tileToScreenPos.x + 32, tileToScreenPos.y - 16);
-        // debugGraphics.lineTo(tileToScreenPos.x + 64, tileToScreenPos.y);
-        // debugGraphics.lineTo(tileToScreenPos.x + 32, tileToScreenPos.y + 16);
-        // debugGraphics.closePath();
-        // debugGraphics.strokePath();
-
-        // this.add.text(tileToScreenPos.x + 32, tileToScreenPos.y, `${x},${y}`, {
-        //   fontSize: '10px',
-        //   color: '#ff0000',
-        //   backgroundColor: '#ffffff'
-        // }).setOrigin(0.5).setDepth(10001);
       }
     }
   }
@@ -341,11 +213,13 @@ export class RoomScene extends Phaser.Scene {
     debugText.setDepth(10000);
 
     this.events.on('update', () => {
-      const camera = this.cameras.main;
+      const roomData = this.roomManager.getRoomData();
+      const scrollPos = this.cameraManager.getScrollPosition();
+      const zoom = this.cameraManager.getZoom();
       const pointer = this.input.activePointer;
 
-      const worldX = pointer.x + camera.scrollX;
-      const worldY = pointer.y + camera.scrollY;
+      const worldX = pointer.x + scrollPos.x;
+      const worldY = pointer.y + scrollPos.y;
       const tilePos = IsometricEngine.screenToTile(worldX, worldY);
 
       const avatarPos = this.avatar ? this.avatar.getTilePosition() : { x: 0, y: 0 };
@@ -353,8 +227,8 @@ export class RoomScene extends Phaser.Scene {
 
       debugText.setText([
         'Phaser-Renderer - Debug Mode',
-        `Room: ${this.roomData.name} (${this.roomData.maxX + 1}x${this.roomData.maxY + 1})`,
-        `Camera: (${Math.round(camera.scrollX)}, ${Math.round(camera.scrollY)}) Zoom: ${camera.zoom.toFixed(2)}`,
+        `Room: ${roomData.name} (${roomData.maxX + 1}x${roomData.maxY + 1})`,
+        `Camera: (${Math.round(scrollPos.x)}, ${Math.round(scrollPos.y)}) Zoom: ${zoom.toFixed(2)}`,
         `Mouse Tile: (${Math.floor(tilePos.x)}, ${Math.floor(tilePos.y)})`,
         `Avatar: (${avatarPos.x}, ${avatarPos.y}) ${isMoving ? '[WALKING]' : '[IDLE]'}`,
         '',
@@ -373,29 +247,15 @@ export class RoomScene extends Phaser.Scene {
       this.avatar.update(time, delta);
     }
 
-    this.updateHoverTile();
-  }
-
-  private updateHoverTile(): void {
-    const pointer = this.input.activePointer;
-    const worldX = pointer.worldX;
-    const worldY = pointer.worldY;
-
-    const hoveredTile = this.getTileAtScreenPosition(worldX, worldY);
-
-    if (hoveredTile && (!this.currentHoverTile || hoveredTile.x !== this.currentHoverTile.x || hoveredTile.y !== this.currentHoverTile.y)) {
-      this.currentHoverTile = hoveredTile;
-      this.renderHoverTile(hoveredTile.x, hoveredTile.y);
-    } else if (!hoveredTile && this.currentHoverTile) {
-      this.currentHoverTile = null;
-      this.hoverGraphics.clear();
-    }
+    this.inputManager.update();
   }
 
   private renderHoverTile(tileX: number, tileY: number): void {
     this.hoverGraphics.clear();
 
-    const tile = this.roomData.tiles[tileY][tileX];
+    const tile = this.roomManager.getTile(tileX, tileY);
+    if (!tile) return;
+
     const tileScreen = IsometricEngine.tileToScreen(tileX, tileY, tile.height);
 
     this.hoverGraphics.fillStyle(0xffffff, 0.2);
