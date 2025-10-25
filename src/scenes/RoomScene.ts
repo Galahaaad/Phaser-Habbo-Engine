@@ -246,7 +246,7 @@ export class RoomScene extends Phaser.Scene {
   }
 
   private createDoorMaskGraphics(doorX: number, doorY: number, doorZ: number): Phaser.GameObjects.Graphics {
-    const doorHeight = 92;
+    const doorHeight = 80;
     const tileBase = {
       x: 32 * (doorX + 1) - 32 * doorY,
       y: 16 * (doorX + 1) + 16 * doorY - 32 * doorZ
