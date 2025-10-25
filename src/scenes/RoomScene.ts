@@ -217,16 +217,49 @@ export class RoomScene extends Phaser.Scene {
   }
 
   private addDebugInfo(): void {
-    const debugText = this.add.text(10, 10, '', {
+    const debugBg = this.add.rectangle(10, 10, 360, 200, 0x000000, 0.85);
+    debugBg.setOrigin(0, 0);
+    debugBg.setScrollFactor(0);
+    debugBg.setDepth(10000);
+
+    const debugText = this.add.text(20, 30, '', {
       fontSize: '14px',
-      color: '#00ff00',
-      backgroundColor: '#000000',
-      padding: { x: 10, y: 10 }
+      color: '#00ff00'
     });
     debugText.setScrollFactor(0);
-    debugText.setDepth(10000);
+    debugText.setDepth(10001);
+
+    const closeButton = this.add.text(340, 15, '×', {
+      fontSize: '24px',
+      color: '#ff0000'
+    });
+    closeButton.setOrigin(0.5);
+    closeButton.setScrollFactor(0);
+    closeButton.setDepth(10002);
+    closeButton.setInteractive({ useHandCursor: true });
+
+    closeButton.on('pointerover', () => {
+      closeButton.setColor('#ffff00');
+      closeButton.setScale(1.2);
+    });
+
+    closeButton.on('pointerout', () => {
+      closeButton.setColor('#ff0000');
+      closeButton.setScale(1);
+    });
+
+    closeButton.on('pointerdown', () => {
+      useGameStore.getState().togglePhaserDebugPanel();
+    });
 
     this.events.on('update', () => {
+      const showPanel = useGameStore.getState().showPhaserDebugPanel;
+      debugBg.setVisible(showPanel);
+      debugText.setVisible(showPanel);
+      closeButton.setVisible(showPanel);
+
+      if (!showPanel) return;
+
       const roomData = this.roomManager.getRoomData();
       const scrollPos = this.cameraManager.getScrollPosition();
       const zoom = this.cameraManager.getZoom();
