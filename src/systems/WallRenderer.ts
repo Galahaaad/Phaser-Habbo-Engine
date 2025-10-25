@@ -22,7 +22,8 @@ export class WallRenderer {
   private floorThickness: number = 8;
   private baseWallHeight: number = 115;
   private maxHeight: number = 0;
-  private scene: Phaser.Scene;
+  // @ts-ignore
+    private scene: Phaser.Scene;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
