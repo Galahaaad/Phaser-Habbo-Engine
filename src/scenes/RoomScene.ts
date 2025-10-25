@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 import { IsometricEngine } from '@engine/IsometricEngine';
-import { GreedyMesher } from '@engine/GreedyMesher';
 import { HabboAvatarSprite } from '@entities/HabboAvatarSprite';
 import { PathFinder } from '@systems/PathFinder';
 import { FloorRenderer } from '@systems/FloorRenderer';
@@ -8,11 +7,13 @@ import { WallRenderer } from '@systems/WallRenderer';
 import { RoomManager } from '@managers/RoomManager';
 import { InputManager, TilePosition } from '@managers/InputManager';
 import { CameraManager } from '@managers/CameraManager';
+import { MeshCache } from '@/utils/MeshCache';
 
 export class RoomScene extends Phaser.Scene {
   private roomManager!: RoomManager;
   private inputManager!: InputManager;
   private cameraManager!: CameraManager;
+  private meshCache!: MeshCache;
 
   private avatar!: HabboAvatarSprite;
   private pathFinder!: PathFinder;
@@ -28,6 +29,8 @@ export class RoomScene extends Phaser.Scene {
     console.log('[RoomScene] Initializing room...');
 
     this.roomManager = new RoomManager();
+    this.meshCache = new MeshCache();
+
     console.log('[RoomScene] Loaded room data:', this.roomManager.getRoomData());
   }
 
@@ -162,11 +165,11 @@ export class RoomScene extends Phaser.Scene {
     const graphics = this.add.graphics();
     const roomData = this.roomManager.getRoomData();
 
-    const mesher = new GreedyMesher(roomData.tiles);
-    const tileMeshes = mesher.getTileMeshes();
-    const wallMeshes = mesher.getWallMeshes();
+    const startTime = performance.now();
+    const { tileMeshes, wallMeshes } = this.meshCache.getMeshes(roomData.tiles);
+    const meshTime = performance.now() - startTime;
 
-    console.log(`[RoomScene] Greedy meshing: ${tileMeshes.length} tile meshes, ${wallMeshes.length} wall meshes`);
+    console.log(`[RoomScene] Greedy meshing: ${tileMeshes.length} tile meshes, ${wallMeshes.length} wall meshes (${meshTime.toFixed(2)}ms, cached: ${this.meshCache.isCached()})`);
 
     this.floorRenderer.renderFloor(graphics, tileMeshes);
 
