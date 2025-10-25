@@ -50,7 +50,6 @@ export class RoomScene extends Phaser.Scene {
     this.setupRenderers();
     this.setupAvatar();
     this.setupInputCallbacks();
-    this.addDebugInfo();
   }
 
   private setupRenderers(): void {
@@ -214,79 +213,6 @@ export class RoomScene extends Phaser.Scene {
         debugGraphics.strokePath();
       }
     }
-  }
-
-  private addDebugInfo(): void {
-    const debugBg = this.add.rectangle(10, 10, 360, 200, 0x000000, 0.85);
-    debugBg.setOrigin(0, 0);
-    debugBg.setScrollFactor(0);
-    debugBg.setDepth(10000);
-
-    const debugText = this.add.text(20, 30, '', {
-      fontSize: '14px',
-      color: '#00ff00'
-    });
-    debugText.setScrollFactor(0);
-    debugText.setDepth(10001);
-
-    const closeButton = this.add.text(340, 15, '×', {
-      fontSize: '24px',
-      color: '#ff0000'
-    });
-    closeButton.setOrigin(0.5);
-    closeButton.setScrollFactor(0);
-    closeButton.setDepth(10002);
-    closeButton.setInteractive({ useHandCursor: true });
-
-    closeButton.on('pointerover', () => {
-      closeButton.setColor('#ffff00');
-      closeButton.setScale(1.2);
-    });
-
-    closeButton.on('pointerout', () => {
-      closeButton.setColor('#ff0000');
-      closeButton.setScale(1);
-    });
-
-    closeButton.on('pointerdown', () => {
-      useGameStore.getState().togglePhaserDebugPanel();
-    });
-
-    this.events.on('update', () => {
-      const showPanel = useGameStore.getState().showPhaserDebugPanel;
-      debugBg.setVisible(showPanel);
-      debugText.setVisible(showPanel);
-      closeButton.setVisible(showPanel);
-
-      if (!showPanel) return;
-
-      const roomData = this.roomManager.getRoomData();
-      const scrollPos = this.cameraManager.getScrollPosition();
-      const zoom = this.cameraManager.getZoom();
-      const pointer = this.input.activePointer;
-
-      const worldX = pointer.x + scrollPos.x;
-      const worldY = pointer.y + scrollPos.y;
-      const tilePos = IsometricEngine.screenToTile(worldX, worldY);
-
-      const avatarPos = this.avatar ? this.avatar.getTilePosition() : { x: 0, y: 0 };
-      const isMoving = this.avatar ? this.avatar.isMoving() : false;
-
-      debugText.setText([
-        'Phaser-Renderer - Debug Mode',
-        `Room: ${roomData.name} (${roomData.maxX + 1}x${roomData.maxY + 1})`,
-        `Camera: (${Math.round(scrollPos.x)}, ${Math.round(scrollPos.y)}) Zoom: ${zoom.toFixed(2)}`,
-        `Mouse Tile: (${Math.floor(tilePos.x)}, ${Math.floor(tilePos.y)})`,
-        `Avatar: (${avatarPos.x}, ${avatarPos.y}) ${isMoving ? '[WALKING]' : '[IDLE]'}`,
-        '',
-        'Controls:',
-        '- Mouse Wheel: Zoom',
-        '- Left Click + Drag: Pan',
-        '- Click on Tile: Walk to tile'
-      ]);
-    });
-
-    console.log('[RoomScene] Debug info added');
   }
 
   public update(time: number, delta: number): void {
