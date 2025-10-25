@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { IsometricEngine } from '@engine/IsometricEngine';
+import { TileSpatialGrid } from '@/utils/TileSpatialGrid';
 import { RoomManager } from './RoomManager';
 
 export interface TilePosition {
@@ -10,6 +10,7 @@ export interface TilePosition {
 export class InputManager {
   private scene: Phaser.Scene;
   private roomManager: RoomManager;
+  private spatialGrid: TileSpatialGrid;
   private currentHoverTile: TilePosition | null = null;
   private isDragging: boolean = false;
   private dragStartX: number = 0;
@@ -21,6 +22,12 @@ export class InputManager {
   constructor(scene: Phaser.Scene, roomManager: RoomManager) {
     this.scene = scene;
     this.roomManager = roomManager;
+
+    const roomData = roomManager.getRoomData();
+    this.spatialGrid = new TileSpatialGrid(roomData.tiles);
+
+    console.log(`[InputManager] Spatial grid: ${this.spatialGrid.getCellCount()} cells, avg ${this.spatialGrid.getAverageTilesPerCell().toFixed(1)} tiles/cell`);
+
     this.setupInputHandlers();
   }
 
@@ -84,28 +91,7 @@ export class InputManager {
   }
 
   public getTileAtScreenPosition(worldX: number, worldY: number): TilePosition | null {
-    const roomData = this.roomManager.getRoomData();
-
-    for (let testY = roomData.maxY; testY >= 0; testY--) {
-      for (let testX = roomData.maxX; testX >= 0; testX--) {
-        const tile = this.roomManager.getTile(testX, testY);
-        if (!tile || !tile.walkable) continue;
-
-        const tileScreen = IsometricEngine.tileToScreen(testX, testY, tile.height);
-        const centerX = tileScreen.x + 32;
-        const centerY = tileScreen.y;
-
-        const dx = worldX - centerX;
-        const dy = worldY - centerY;
-        const diamondDist = Math.abs(dx / 32) + Math.abs(dy / 16);
-
-        if (diamondDist <= 1.05) {
-          return { x: testX, y: testY };
-        }
-      }
-    }
-
-    return null;
+    return this.spatialGrid.getTileAtPosition(worldX, worldY);
   }
 
   public update(): void {
