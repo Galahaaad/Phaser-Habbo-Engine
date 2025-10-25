@@ -25,7 +25,7 @@ export class HabboAvatarSprite {
 
   private frameCounter: number = 0;
   private frameUpdateCounter: number = 0;
-  private frameUpdateInterval: number = 2;
+  private frameUpdateInterval: number = 3;
 
   private username: string;
   private id: number;
@@ -129,6 +129,14 @@ export class HabboAvatarSprite {
 
   public walkTo(path: Vector3[]): void {
     if (path.length === 0) return;
+
+    if (this.isWalking) {
+      this.position.set(
+        Math.round(this.position.x),
+        Math.round(this.position.y),
+        this.position.z
+      );
+    }
 
     this.currentPath = path.map(p => new Vector3(p.x, p.y, p.z));
     this.currentTarget = this.currentPath.shift() || null;
