@@ -11,10 +11,6 @@ export class HabboAvatarSprite {
   private headSprite!: Phaser.GameObjects.Sprite;
   private leftHandSprite!: Phaser.GameObjects.Sprite;
   private rightHandSprite!: Phaser.GameObjects.Sprite;
-  private nameText: Phaser.GameObjects.Text;
-
-  private debugMarker!: Phaser.GameObjects.Graphics;
-  private debugOrigin!: Phaser.GameObjects.Graphics;
 
   private position: Vector3;
   private direction: number = 2;
@@ -51,29 +47,10 @@ export class HabboAvatarSprite {
 
     this.createBodySprite();
 
-    this.nameText = scene.add.text(0, -85, username, {
-      fontSize: '14px',
-      color: '#ffffff',
-      fontStyle: 'bold',
-      stroke: '#000000',
-      strokeThickness: 3,
-      shadow: {
-        offsetX: 1,
-        offsetY: 1,
-        color: '#000000',
-        blur: 2,
-        fill: true
-      }
-    });
-    this.nameText.setOrigin(0.5, 1);
-
-    this.debugOrigin = scene.add.graphics();
-
-    this.container.add([this.bodySprite, this.leftHandSprite, this.rightHandSprite, this.headSprite, this.nameText]);
-
-    this.debugMarker = scene.add.graphics();
+    this.container.add([this.bodySprite, this.leftHandSprite, this.rightHandSprite, this.headSprite]);
 
     this.updateScreenPosition();
+    this.updateDepth();
     this.updateSprite();
   }
 
@@ -148,9 +125,6 @@ export class HabboAvatarSprite {
         sprite.setVisible(false);
       }
     });
-
-    const nameOffsetX = flipped ? -30 : 35;
-    this.nameText.setX(nameOffsetX);
   }
 
   public walkTo(path: Vector3[]): void {
@@ -270,18 +244,6 @@ export class HabboAvatarSprite {
     const containerY = screenPos.y + MANUAL_OFFSET_Y;
 
     this.container.setPosition(containerX, containerY);
-
-    this.debugMarker.clear();
-    this.debugMarker.fillStyle(0x0000ff, 0.8);
-    this.debugMarker.fillCircle(screenPos.x, screenPos.y, 6);
-    this.debugMarker.setDepth(9999);
-
-    this.debugOrigin.clear();
-    this.debugOrigin.fillStyle(0xff0000, 1);
-    this.debugOrigin.fillCircle(screenPos.x, screenPos.y, 4);
-    this.debugOrigin.lineStyle(2, 0xff0000, 1);
-    this.debugOrigin.strokeCircle(screenPos.x, screenPos.y, 7);
-    this.debugOrigin.setDepth(10000);
   }
 
   private updateDepth(): void {

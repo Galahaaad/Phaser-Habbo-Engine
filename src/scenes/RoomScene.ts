@@ -45,7 +45,7 @@ export class RoomScene extends Phaser.Scene {
     console.log('[RoomScene] Creating room visualization...');
 
     this.cameraManager = new CameraManager(this);
-    this.cameraManager.setBackgroundColor('#87CEEB');
+    this.cameraManager.setBackgroundColor('#0c547a');
 
     this.inputManager = new InputManager(this, this.roomManager);
 
@@ -77,9 +77,12 @@ export class RoomScene extends Phaser.Scene {
     const roomData = this.roomManager.getRoomData();
     this.pathFinder = new PathFinder(roomData.tiles, roomData.maxX, roomData.maxY);
 
-    const centerPos = this.roomManager.getCenterPosition();
-    console.log(`[RoomScene] Creating avatar at tile (${centerPos.x}, ${centerPos.y})`);
-    this.avatar = new HabboAvatarSprite(this, 1, 'User_Avatar', centerPos.x, centerPos.y, 0);
+    const spawnPos = roomData.doorTile || this.roomManager.getCenterPosition();
+    const spawnTile = this.roomManager.getTile(spawnPos.x, spawnPos.y);
+    const spawnZ = spawnTile?.height || 0;
+
+    console.log(`[RoomScene] Creating avatar at tile (${spawnPos.x}, ${spawnPos.y}, ${spawnZ})`);
+    this.avatar = new HabboAvatarSprite(this, 1, 'User_Avatar', spawnPos.x, spawnPos.y, spawnZ);
   }
 
   private setupInputCallbacks(): void {
@@ -141,7 +144,6 @@ export class RoomScene extends Phaser.Scene {
 
     if (path) {
       this.avatar.walkTo(path);
-      this.highlightTile(tile.x, tile.y);
 
       useGameStore.getState().setAvatarMoving(true);
       useGameStore.getState().setAvatarPosition({
@@ -195,6 +197,7 @@ export class RoomScene extends Phaser.Scene {
       this.wallGraphicsObject.destroy();
     }
     this.wallGraphicsObject = this.add.graphics();
+    this.wallGraphicsObject.setDepth(999999999);
     this.wallRenderer.setMaxHeight(roomData.maxHeight);
     this.wallRenderer.renderWalls(this.wallGraphicsObject, wallMeshes);
 
@@ -209,9 +212,37 @@ export class RoomScene extends Phaser.Scene {
       }
     }
 
-    this.renderTileDebug();
+    this.renderTileBorders();
 
     console.log('[RoomScene] Room rendered with GeometryMask invertAlpha');
+  }
+
+  private renderTileBorders(): void {
+    const borderGraphics = this.add.graphics();
+    borderGraphics.setDepth(10);
+    const roomData = this.roomManager.getRoomData();
+
+    for (let y = 0; y <= roomData.maxY; y++) {
+      for (let x = 0; x <= roomData.maxX; x++) {
+        const tile = this.roomManager.getTile(x, y);
+        if (!tile || !tile.walkable) continue;
+
+        if (roomData.doorTile && x === roomData.doorTile.x && y === roomData.doorTile.y) {
+          continue;
+        }
+
+        const tileToScreenPos = IsometricEngine.tileToScreen(x, y, tile.height);
+
+        borderGraphics.lineStyle(1, 0x8f8f5f, 1);
+        borderGraphics.beginPath();
+        borderGraphics.moveTo(tileToScreenPos.x, tileToScreenPos.y);
+        borderGraphics.lineTo(tileToScreenPos.x + 32, tileToScreenPos.y - 16);
+        borderGraphics.lineTo(tileToScreenPos.x + 64, tileToScreenPos.y);
+        borderGraphics.lineTo(tileToScreenPos.x + 32, tileToScreenPos.y + 16);
+        borderGraphics.closePath();
+        borderGraphics.strokePath();
+      }
+    }
   }
 
   private createDoorMaskGraphics(doorX: number, doorY: number, doorZ: number): Phaser.GameObjects.Graphics {
@@ -271,6 +302,16 @@ export class RoomScene extends Phaser.Scene {
 
       if (isMoving !== storeMovingState) {
         useGameStore.getState().setAvatarMoving(isMoving);
+      }
+
+      const avatarPos = this.avatar.getTilePosition();
+      const roomData = this.roomManager.getRoomData();
+      const isOnDoorTile = roomData.doorTile &&
+                          avatarPos.x === roomData.doorTile.x &&
+                          avatarPos.y === roomData.doorTile.y;
+
+      if (this.wallGraphicsObject) {
+        this.wallGraphicsObject.setDepth(isOnDoorTile ? 999999999 : 10);
       }
     }
 

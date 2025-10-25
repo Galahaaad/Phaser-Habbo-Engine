@@ -11,7 +11,7 @@ export interface FloorStyle {
 }
 
 export const FLOOR_STYLES: Record<string, FloorStyle> = {
-  '101': { id: '101', color1: 0x8b7355, color2: 0xa0826d, pattern: 'checkered' },
+  '101': { id: '101', color1: 0x999966, color2: 0x999966, pattern: 'solid' },
   '102': { id: '102', color1: 0x4a4a4a, color2: 0x5a5a5a, pattern: 'checkered' },
   '103': { id: '103', color1: 0xc8b896, color2: 0xdbc9a6, pattern: 'striped' },
   '104': { id: '104', color1: 0x7c9eb2, color2: 0x8fadc0, pattern: 'checkered' },
@@ -38,15 +38,6 @@ export class FloorRenderer {
     const style = FLOOR_STYLES[this.currentFloorType] || FLOOR_STYLES['101'];
 
     for (const mesh of tileMeshes) {
-      const isDoorTile = doorTile &&
-        doorTile.x >= mesh.position.x &&
-        doorTile.x < mesh.position.x + mesh.size.x &&
-        doorTile.y >= mesh.position.y &&
-        doorTile.y < mesh.position.y + mesh.size.y;
-
-      const isAlternate = this.shouldUseAlternateColor(mesh.position.x, mesh.position.y, style.pattern);
-      const color = isDoorTile ? 0xff0000 : (isAlternate ? style.color2 : style.color1);
-
       const thicknessTiles = this.floorThickness / IsometricEngine.TILE_SCALE;
 
       const floorScreenPos = {
@@ -61,11 +52,16 @@ export class FloorRenderer {
           y: mesh.size.y,
           z: thicknessTiles
         },
-        color,
-        shadowMultipliers: {
-          [CubeFace.TOP]: 1.0,
-          [CubeFace.LEFT]: 0.7,
-          [CubeFace.RIGHT]: 0.6
+        faceColors: {
+          [CubeFace.TOP]: {
+            fill: 0x999966
+          },
+          [CubeFace.LEFT]: {
+            fill: 0x858558
+          },
+          [CubeFace.RIGHT]: {
+            fill: 0x70704b
+          }
         },
         screenPosition: floorScreenPos
       });

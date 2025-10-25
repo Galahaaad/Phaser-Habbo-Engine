@@ -11,7 +11,7 @@ export interface WallStyle {
 }
 
 export const WALL_STYLES: Record<string, WallStyle> = {
-  '101': { id: '101', color: 0xd4c5b9, borderColor: 0xa89985, pattern: 'paneled' },
+  '101': { id: '101', color: 0xb7bac8, borderColor: 0xa89985, pattern: 'paneled' },
   '102': { id: '102', color: 0x6b7d8f, borderColor: 0x4a5a6a, pattern: 'paneled' },
   '103': { id: '103', color: 0xf4e4d4, borderColor: 0xc9b99a, pattern: 'striped' },
 };
@@ -76,11 +76,16 @@ export class WallRenderer {
       CubeRenderer.renderCube(graphics, {
         position: mesh.position,
         size: { x: sizeX, y: sizeY, z: wallHeightTiles },
-        color: style.color,
-        shadowMultipliers: {
-          [CubeFace.TOP]: 1.0,
-          [CubeFace.LEFT]: 0.8,
-          [CubeFace.RIGHT]: 0.71
+        faceColors: {
+          [CubeFace.TOP]: {
+            fill: 0x71737c
+          },
+          [CubeFace.LEFT]: {
+            fill: 0xb7bac8
+          },
+          [CubeFace.RIGHT]: {
+            fill: 0x9295a0
+          }
         },
         screenPosition: screenPos
       });
