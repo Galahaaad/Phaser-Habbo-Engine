@@ -9,29 +9,45 @@ export class RoomManager {
 
   private createDefaultRoom(): RoomData {
     const tiles: Tile[][] = [];
-    let maxHeight = 0;
+    const maxHeight = 0;
 
-    for (let y = 0; y < 10; y++) {
+    const floorPattern = [
+      'xxxxxxxxxxxx',
+      'xxxxxxx0000x',
+      'xxxxxxx0000x',
+      'xxx00000000x',
+      'xxx00000000x',
+      'xx000000000x',
+      'xxx00000000x',
+      'x0000000000x',
+      'x0000000000x',
+      'x0000000000x',
+      'x0000000000x',
+      'xxxxxxxxxxxx'
+    ];
+
+    for (let y = 0; y < 12; y++) {
       tiles[y] = [];
-      for (let x = 0; x < 10; x++) {
+      for (let x = 0; x < 12; x++) {
+        const isFloor = floorPattern[y][x] === '0';
+
         tiles[y][x] = {
           x,
           y,
           height: 0,
           isBlocked: false,
-          walkable: true
+          walkable: isFloor
         };
-        maxHeight = Math.max(maxHeight, tiles[y][x].height);
       }
     }
 
     return {
       id: 1,
-      name: 'Test Room',
+      name: 'Wall Test Room',
       minX: 0,
-      maxX: 9,
+      maxX: 11,
       minY: 0,
-      maxY: 9,
+      maxY: 11,
       maxHeight,
       wallType: '101',
       floorType: '101',
