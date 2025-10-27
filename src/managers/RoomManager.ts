@@ -12,23 +12,42 @@ export class RoomManager {
     const maxHeight = 0;
 
     const floorPattern = [
-      'xxxxxxxxxxxx',
-      'xxxxxxx0000x',
-      'xxxxxxx0000x',
-      'xxx00000000x',
-      'xxx00000000x',
-      'xx000000000x',
-      'xxx00000000x',
-      'x0000000000x',
-      'x0000000000x',
-      'x0000000000x',
-      'x0000000000x',
-      'xxxxxxxxxxxx'
+      'xxxxxxxxxxxxxxxxxxxxxxxxx',
+      'xxxxxxxxxxxxxxxxx00000000',
+      'xxxxxxxxxxxxxxxxx00000000',
+      'xxxxxxxxxxxxxxxxx00000000',
+      'xxxxxxxxxxxxxxxxx00000000',
+      'xxxxxxxxx0000000000000000',
+      'xxxxxxxxx0000000000000000',
+      'xxxxxxxxx0000000000000000',
+      'xxxxxxxxx0000000000000000',
+      'x000000000000000000000000',
+      'x000000000000000000000000',
+      'x000000000000000000000000',
+      'x000000000000000000000000',
+      '0000000000000000000000000',
+      'x000000000000000000000000',
+      'x000000000000000000000000',
+      'x000000000000000000000000',
+      'xxxxxxxxx0000000000000000',
+      'xxxxxxxxx0000000000000000',
+      'xxxxxxxxx0000000000000000',
+      'xxxxxxxxx0000000000000000',
+      'xxxxxxxxx0000000000000000',
+      'xxxxxxxxx0000000000000000',
+      'xxxxxxxxx0000000000000000',
+      'xxxxxxxxx0000000000000000',
+      'xxxxxxxxx0000000000000000',
+      'xxxxxxxxx0000000000000000',
+      'xxxxxxxxxxxxxxxxxxxxxxxxx'
     ];
 
-    for (let y = 0; y < 12; y++) {
+    const maxY = floorPattern.length - 1;
+    const maxX = floorPattern[0].length - 1;
+
+    for (let y = 0; y <= maxY; y++) {
       tiles[y] = [];
-      for (let x = 0; x < 12; x++) {
+      for (let x = 0; x <= maxX; x++) {
         const isFloor = floorPattern[y][x] === '0';
 
         tiles[y][x] = {
@@ -45,11 +64,11 @@ export class RoomManager {
 
     return {
       id: 1,
-      name: 'Wall Test Room',
+      name: 'Large Test Room',
       minX: 0,
-      maxX: 11,
+      maxX,
       minY: 0,
-      maxY: 11,
+      maxY,
       maxHeight,
       wallType: '101',
       floorType: '101',

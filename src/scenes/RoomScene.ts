@@ -206,6 +206,8 @@ export class RoomScene extends Phaser.Scene {
     if (roomData.doorTile) {
       const doorTile = this.roomManager.getTile(roomData.doorTile.x, roomData.doorTile.y);
       if (doorTile) {
+        this.renderDoorTile(graphics, roomData.doorTile.x, roomData.doorTile.y, doorTile.height);
+
         const doorMaskGraphics = this.createDoorMaskGraphics(roomData.doorTile.x, roomData.doorTile.y, doorTile.height);
         const geometryMask = doorMaskGraphics.createGeometryMask();
         geometryMask.invertAlpha = true;
@@ -242,6 +244,19 @@ export class RoomScene extends Phaser.Scene {
         borderGraphics.strokePath();
       }
     }
+  }
+
+  private renderDoorTile(graphics: Phaser.GameObjects.Graphics, doorX: number, doorY: number, doorZ: number): void {
+    const tileScreen = IsometricEngine.tileToScreen(doorX, doorY, doorZ);
+
+    graphics.fillStyle(0x999966, 1);
+    graphics.beginPath();
+    graphics.moveTo(tileScreen.x, tileScreen.y);
+    graphics.lineTo(tileScreen.x + 32, tileScreen.y - 16);
+    graphics.lineTo(tileScreen.x + 64, tileScreen.y);
+    graphics.lineTo(tileScreen.x + 32, tileScreen.y + 16);
+    graphics.closePath();
+    graphics.fillPath();
   }
 
   private createDoorMaskGraphics(doorX: number, doorY: number, doorZ: number): Phaser.GameObjects.Graphics {

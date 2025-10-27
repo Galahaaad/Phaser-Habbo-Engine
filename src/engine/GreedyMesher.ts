@@ -37,7 +37,9 @@ export class GreedyMesher {
         const tile = this.tiles[y][x];
         const key = `${x},${y}`;
 
-        if (tile && tile.walkable && !tile.isBlocked) {
+        const isDoorTile = this.doorTile && x === this.doorTile.x && y === this.doorTile.y;
+
+        if (tile && tile.walkable && !tile.isBlocked && !isDoorTile) {
           sizes.set(key, { x: 1, y: 1, z: tile.height });
         } else {
           sizes.set(key, undefined);
