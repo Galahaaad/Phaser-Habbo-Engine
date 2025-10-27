@@ -13,6 +13,19 @@ export class GreedyMesher {
     this.height = tiles.length;
     this.width = tiles[0]?.length || 0;
     this.doorTile = doorTile;
+    this.markWallsOnTiles();
+  }
+
+  private markWallsOnTiles(): void {
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        const tile = this.tiles[y][x];
+        if (tile && tile.walkable) {
+          tile.hasNorthWall = this.shouldHaveNorthWall(x, y);
+          tile.hasWestWall = this.shouldHaveWestWall(x, y);
+        }
+      }
+    }
   }
 
   public getTileMeshes(): TileMesh[] {
@@ -164,7 +177,7 @@ export class GreedyMesher {
     const rowWallSizes: Map<string, Vector3D | undefined> = new Map();
     const columnWallSizes: Map<string, Vector3D | undefined> = new Map();
 
-    console.log(`[GreedyMesher] Generating walls with scuti logic, door at (${this.doorTile?.x}, ${this.doorTile?.y})`);
+    console.log(`[GreedyMesher] Generating - door at (${this.doorTile?.x}, ${this.doorTile?.y})`);
 
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {

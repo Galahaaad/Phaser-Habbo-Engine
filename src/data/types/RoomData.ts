@@ -6,6 +6,8 @@ export interface Tile {
   height: number;
   isBlocked: boolean;
   walkable: boolean;
+  hasNorthWall?: boolean;
+  hasWestWall?: boolean;
 }
 
 export enum RoomObjectCategory {

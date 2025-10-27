@@ -89,7 +89,7 @@ export class RoomScene extends Phaser.Scene {
 
   private setupAvatar(): void {
     const roomData = this.roomManager.getRoomData();
-    this.pathFinder = new PathFinder(roomData.tiles, roomData.maxX, roomData.maxY);
+    this.pathFinder = new PathFinder(roomData.tiles, roomData.maxX, roomData.maxY, roomData.doorTile);
 
     const spawnPos = roomData.doorTile || this.roomManager.getCenterPosition();
     const spawnTile = this.roomManager.getTile(spawnPos.x, spawnPos.y);
@@ -157,10 +157,13 @@ export class RoomScene extends Phaser.Scene {
       return;
     }
 
+    console.log(`[RoomScene] Tile clicked: (${tile.x}, ${tile.y})`);
+
     const avatarPos = this.avatar.getTilePosition();
     const path = this.pathFinder.findPath(avatarPos.x, avatarPos.y, tile.x, tile.y);
 
     if (path) {
+      console.log(`[RoomScene] Path found:`, path.map(p => `(${p.x},${p.y})`).join(' -> '));
       this.avatar.walkTo(path);
 
       useGameStore.getState().setAvatarMoving(true);
@@ -294,20 +297,14 @@ export class RoomScene extends Phaser.Scene {
     const dy = avatarPos.y - roomData.doorTile.y;
     const distanceToDoor = Math.sqrt(dx * dx + dy * dy);
 
-    const avatarDepth = IsometricEngine.calculateDepth(avatarPos.x, avatarPos.y, avatarPos.z);
-    const doorDepth = IsometricEngine.calculateDepth(roomData.doorTile.x, roomData.doorTile.y, doorTile.height);
     // @ts-ignore
       const doorGraphicsDepth = DepthManager.getCategoryLayerOffset(RoomObjectCategory.DOOR);
 
-    const transitionZone = 1.5;
-    const isNearDoor = distanceToDoor < transitionZone;
-    const isBehindDoor = avatarDepth <= doorDepth + (isNearDoor ? 2000000 : 0);
-
-    if (isBehindDoor) {
-      const finalDepth = doorGraphicsDepth - 1000;
+    if (distanceToDoor <= 0.5) {
+      const finalDepth = doorGraphicsDepth - 100000;
       this.avatar.setDepth(finalDepth);
     } else {
-      const finalDepth = doorGraphicsDepth + 1000;
+      const finalDepth = doorGraphicsDepth + 100000;
       this.avatar.setDepth(finalDepth);
     }
   }

@@ -31,11 +31,13 @@ export class PathFinder {
   private tiles: Tile[][];
   private maxX: number;
   private maxY: number;
+  private doorTile?: { x: number; y: number };
 
-  constructor(tiles: Tile[][], maxX: number, maxY: number) {
+  constructor(tiles: Tile[][], maxX: number, maxY: number, doorTile?: { x: number; y: number }) {
     this.tiles = tiles;
     this.maxX = maxX;
     this.maxY = maxY;
+    this.doorTile = doorTile;
   }
 
   public findPath(
@@ -130,22 +132,75 @@ export class PathFinder {
       const newX = x + dir.dx;
       const newY = y + dir.dy;
 
-      if (this.isValidTile(newX, newY) && !this.tiles[newY][newX].isBlocked) {
-        // Prevent corner cutting on diagonal moves
-        if (dir.dx !== 0 && dir.dy !== 0) {
-          const checkX = this.isValidTile(x + dir.dx, y) && !this.tiles[y][x + dir.dx].isBlocked;
-          const checkY = this.isValidTile(x, y + dir.dy) && !this.tiles[y + dir.dy][x].isBlocked;
+      if (!this.isValidTile(newX, newY) || this.tiles[newY][newX].isBlocked) {
+        continue;
+      }
 
-          if (!checkX || !checkY) {
-            continue;
-          }
+      if (!this.canMoveBetweenTiles(x, y, newX, newY)) {
+        continue;
+      }
+
+      if (dir.dx !== 0 && dir.dy !== 0) {
+        const checkX = this.isValidTile(x + dir.dx, y) && !this.tiles[y][x + dir.dx].isBlocked;
+        const checkY = this.isValidTile(x, y + dir.dy) && !this.tiles[y + dir.dy][x].isBlocked;
+
+        if (!checkX || !checkY) {
+          continue;
         }
 
-        neighbors.push(new PathNode(newX, newY));
+        const canMoveX = this.canMoveBetweenTiles(x, y, x + dir.dx, y);
+        const canMoveY = this.canMoveBetweenTiles(x, y, x, y + dir.dy);
+
+        if (!canMoveX || !canMoveY) {
+          continue;
+        }
       }
+
+      neighbors.push(new PathNode(newX, newY));
     }
 
     return neighbors;
+  }
+
+  private canMoveBetweenTiles(fromX: number, fromY: number, toX: number, toY: number): boolean {
+    const dx = toX - fromX;
+    const dy = toY - fromY;
+
+    const fromTile = this.tiles[fromY][fromX];
+    const toTile = this.tiles[toY][toX];
+
+    const isDoorFrom = this.doorTile && fromX === this.doorTile.x && fromY === this.doorTile.y;
+    const isDoorTo = this.doorTile && toX === this.doorTile.x && toY === this.doorTile.y;
+
+    if (isDoorFrom || isDoorTo) {
+      return true;
+    }
+
+    if (dy < 0) {
+      if (fromTile.hasNorthWall) {
+        return false;
+      }
+    }
+
+    if (dy > 0) {
+      if (toTile.hasNorthWall) {
+        return false;
+      }
+    }
+
+    if (dx < 0) {
+      if (fromTile.hasWestWall) {
+        return false;
+      }
+    }
+
+    if (dx > 0) {
+      if (toTile.hasWestWall) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   private reconstructPath(endNode: PathNode): Vector3[] {
