@@ -132,7 +132,7 @@ export class PathFinder {
       const newX = x + dir.dx;
       const newY = y + dir.dy;
 
-      if (!this.isValidTile(newX, newY) || this.tiles[newY][newX].isBlocked) {
+      if (!this.isValidTile(newX, newY) || this.tiles[newY][newX].isBlocked || !this.tiles[newY][newX].walkable) {
         continue;
       }
 
@@ -141,8 +141,8 @@ export class PathFinder {
       }
 
       if (dir.dx !== 0 && dir.dy !== 0) {
-        const checkX = this.isValidTile(x + dir.dx, y) && !this.tiles[y][x + dir.dx].isBlocked;
-        const checkY = this.isValidTile(x, y + dir.dy) && !this.tiles[y + dir.dy][x].isBlocked;
+        const checkX = this.isValidTile(x + dir.dx, y) && !this.tiles[y][x + dir.dx].isBlocked && this.tiles[y][x + dir.dx].walkable;
+        const checkY = this.isValidTile(x, y + dir.dy) && !this.tiles[y + dir.dy][x].isBlocked && this.tiles[y + dir.dy][x].walkable;
 
         if (!checkX || !checkY) {
           continue;
