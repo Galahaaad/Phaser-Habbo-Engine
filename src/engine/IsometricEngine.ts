@@ -19,7 +19,7 @@ export class IsometricEngine {
     x: number,
     y: number,
     z: number,
-    sizeX: number,
+    _sizeX: number,
     sizeY: number
   ): { x: number; y: number } {
     return {

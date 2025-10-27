@@ -1,15 +1,16 @@
 import Phaser from 'phaser';
 import { IsometricEngine } from '@engine/IsometricEngine';
+import { DepthManager } from '@engine/DepthManager';
 import { HabboAvatarSprite } from '@entities/HabboAvatarSprite';
 import { PathFinder } from '@systems/PathFinder';
 import { FloorRenderer } from '@systems/FloorRenderer';
 import { WallRenderer } from '@systems/WallRenderer';
-import { DoorRenderer } from '@systems/DoorRenderer';
 import { RoomManager } from '@managers/RoomManager';
 import { InputManager, TilePosition } from '@managers/InputManager';
 import { CameraManager } from '@managers/CameraManager';
 import { MeshCache } from '@/utils/MeshCache';
 import { useGameStore } from '@core/store';
+import { RoomObjectCategory } from '@data/types/RoomData';
 
 export class RoomScene extends Phaser.Scene {
   private roomManager!: RoomManager;
@@ -21,7 +22,6 @@ export class RoomScene extends Phaser.Scene {
   private pathFinder!: PathFinder;
   private floorRenderer!: FloorRenderer;
   private wallRenderer!: WallRenderer;
-  private doorRenderer!: DoorRenderer;
   private hoverGraphics!: Phaser.GameObjects.Graphics;
   private wallGraphicsObject?: Phaser.GameObjects.Graphics;
 
@@ -30,20 +30,14 @@ export class RoomScene extends Phaser.Scene {
   }
 
   public init(): void {
-    console.log('[RoomScene] Initializing room...');
-
     this.roomManager = new RoomManager();
     this.meshCache = new MeshCache();
 
     const roomData = this.roomManager.getRoomData();
     useGameStore.getState().setRoomName(roomData.name);
-
-    console.log('[RoomScene] Loaded room data:', roomData);
   }
 
   public create(): void {
-    console.log('[RoomScene] Creating room visualization...');
-
     this.cameraManager = new CameraManager(this);
     this.cameraManager.setBackgroundColor('#0c547a');
 
@@ -55,14 +49,34 @@ export class RoomScene extends Phaser.Scene {
     this.setupInputCallbacks();
   }
 
+  public shutdown(): void {
+    if (this.cameraManager) {
+      this.cameraManager.destroy();
+    }
+
+    if (this.inputManager) {
+      this.inputManager.destroy();
+    }
+
+    if (this.avatar) {
+      this.avatar.destroy();
+    }
+
+    if (this.wallGraphicsObject) {
+      this.wallGraphicsObject.destroy();
+    }
+
+    if (this.hoverGraphics) {
+      this.hoverGraphics.destroy();
+    }
+  }
+
   private setupRenderers(): void {
     this.floorRenderer = new FloorRenderer(this);
     this.floorRenderer.setFloorType('101');
 
     this.wallRenderer = new WallRenderer(this);
     this.wallRenderer.setWallType('101');
-
-    this.doorRenderer = new DoorRenderer(this);
 
     this.hoverGraphics = this.add.graphics();
     this.hoverGraphics.setDepth(998);
@@ -81,8 +95,8 @@ export class RoomScene extends Phaser.Scene {
     const spawnTile = this.roomManager.getTile(spawnPos.x, spawnPos.y);
     const spawnZ = spawnTile?.height || 0;
 
-    console.log(`[RoomScene] Creating avatar at tile (${spawnPos.x}, ${spawnPos.y}, ${spawnZ})`);
     this.avatar = new HabboAvatarSprite(this, 1, 'User_Avatar', spawnPos.x, spawnPos.y, spawnZ);
+    this.updateAvatarDepthRelativeToDoor();
   }
 
   private setupInputCallbacks(): void {
@@ -101,7 +115,16 @@ export class RoomScene extends Phaser.Scene {
     if (this.textures.exists(textureKey)) return;
 
     const frames = meta.spritesheet.frames;
-    const frameData: any = {};
+    interface FrameData {
+      [key: string]: {
+        frame: { x: number; y: number; w: number; h: number };
+        rotated: boolean;
+        trimmed: boolean;
+        spriteSourceSize: { x: number; y: number; w: number; h: number };
+        sourceSize: { w: number; h: number };
+      };
+    }
+    const frameData: FrameData = {};
 
     for (const frameName in frames) {
       const frame = frames[frameName];
@@ -127,15 +150,10 @@ export class RoomScene extends Phaser.Scene {
     };
 
     this.textures.addAtlas(textureKey, this.textures.get(imageKey).getSourceImage() as HTMLImageElement, atlasData);
-
-    console.log('[RoomScene] Avatar atlas created with', Object.keys(frames).length, 'frames');
   }
 
   private handleTileClick(tile: TilePosition): void {
-    console.log(`[RoomScene] Tile clicked: (${tile.x}, ${tile.y})`);
-
     if (!this.roomManager.isTileWalkable(tile.x, tile.y)) {
-      console.log(`[RoomScene] Tile (${tile.x}, ${tile.y}) is not walkable`);
       return;
     }
 
@@ -162,42 +180,23 @@ export class RoomScene extends Phaser.Scene {
     }
   }
 
-  private highlightTile(tileX: number, tileY: number): void {
-    const tileCorner = IsometricEngine.tileToScreen(tileX, tileY, 0);
-    const screenPos = {
-      x: tileCorner.x + 32,
-      y: tileCorner.y
-    };
-
-    const highlight = this.add.circle(screenPos.x, screenPos.y, 12, 0x00ff00, 0.5);
-    highlight.setDepth(999);
-
-    this.tweens.add({
-      targets: highlight,
-      alpha: 0,
-      scale: 1.5,
-      duration: 500,
-      onComplete: () => highlight.destroy()
-    });
-  }
-
   private renderRoom(): void {
     const graphics = this.add.graphics();
     const roomData = this.roomManager.getRoomData();
 
-    const startTime = performance.now();
     const { tileMeshes, wallMeshes } = this.meshCache.getMeshes(roomData.tiles, roomData.doorTile);
-    const meshTime = performance.now() - startTime;
-
-    console.log(`[RoomScene] Greedy meshing: ${tileMeshes.length} tile meshes, ${wallMeshes.length} wall meshes (${meshTime.toFixed(2)}ms, cached: ${this.meshCache.isCached()})`);
 
     this.floorRenderer.renderFloor(graphics, tileMeshes, roomData.doorTile);
 
     if (this.wallGraphicsObject) {
       this.wallGraphicsObject.destroy();
     }
+
     this.wallGraphicsObject = this.add.graphics();
-    this.wallGraphicsObject.setDepth(999999999);
+    // @ts-ignore
+      const doorDepth = DepthManager.getCategoryLayerOffset(RoomObjectCategory.DOOR);
+    this.wallGraphicsObject.setDepth(doorDepth);
+
     this.wallRenderer.setMaxHeight(roomData.maxHeight);
     this.wallRenderer.renderWalls(this.wallGraphicsObject, wallMeshes);
 
@@ -208,13 +207,10 @@ export class RoomScene extends Phaser.Scene {
         const geometryMask = doorMaskGraphics.createGeometryMask();
         geometryMask.invertAlpha = true;
         this.wallGraphicsObject.setMask(geometryMask);
-        console.log(`[RoomScene] Door hole created with inverted GeometryMask at (${roomData.doorTile.x}, ${roomData.doorTile.y})`);
       }
     }
 
     this.renderTileBorders();
-
-    console.log('[RoomScene] Room rendered with GeometryMask invertAlpha');
   }
 
   private renderTileBorders(): void {
@@ -269,31 +265,7 @@ export class RoomScene extends Phaser.Scene {
     return doorMaskGraphics;
   }
 
-  private renderTileDebug(): void {
-    const debugGraphics = this.add.graphics();
-    debugGraphics.setDepth(10000);
-    const roomData = this.roomManager.getRoomData();
-
-    for (let y = 0; y <= roomData.maxY; y++) {
-      for (let x = 0; x <= roomData.maxX; x++) {
-        const tile = this.roomManager.getTile(x, y);
-        if (!tile || !tile.walkable) continue;
-
-        const tileToScreenPos = IsometricEngine.tileToScreen(x, y, tile.height);
-
-        debugGraphics.lineStyle(1, 0xffffff, 0.3);
-        debugGraphics.beginPath();
-        debugGraphics.moveTo(tileToScreenPos.x, tileToScreenPos.y);
-        debugGraphics.lineTo(tileToScreenPos.x + 32, tileToScreenPos.y - 16);
-        debugGraphics.lineTo(tileToScreenPos.x + 64, tileToScreenPos.y);
-        debugGraphics.lineTo(tileToScreenPos.x + 32, tileToScreenPos.y + 16);
-        debugGraphics.closePath();
-        debugGraphics.strokePath();
-      }
-    }
-  }
-
-  public update(time: number, delta: number): void {
+  public update(time: number, delta: number): void{
     if (this.avatar) {
       this.avatar.update(time, delta);
 
@@ -304,18 +276,40 @@ export class RoomScene extends Phaser.Scene {
         useGameStore.getState().setAvatarMoving(isMoving);
       }
 
-      const avatarPos = this.avatar.getTilePosition();
-      const roomData = this.roomManager.getRoomData();
-      const isOnDoorTile = roomData.doorTile &&
-                          avatarPos.x === roomData.doorTile.x &&
-                          avatarPos.y === roomData.doorTile.y;
-
-      if (this.wallGraphicsObject) {
-        this.wallGraphicsObject.setDepth(isOnDoorTile ? 999999999 : 10);
-      }
+      this.updateAvatarDepthRelativeToDoor();
     }
 
     this.inputManager.update();
+  }
+
+  private updateAvatarDepthRelativeToDoor(): void {
+    const roomData = this.roomManager.getRoomData();
+    if (!roomData.doorTile) return;
+
+    const avatarPos = this.avatar.getPosition();
+    const doorTile = this.roomManager.getTile(roomData.doorTile.x, roomData.doorTile.y);
+    if (!doorTile) return;
+
+    const dx = avatarPos.x - roomData.doorTile.x;
+    const dy = avatarPos.y - roomData.doorTile.y;
+    const distanceToDoor = Math.sqrt(dx * dx + dy * dy);
+
+    const avatarDepth = IsometricEngine.calculateDepth(avatarPos.x, avatarPos.y, avatarPos.z);
+    const doorDepth = IsometricEngine.calculateDepth(roomData.doorTile.x, roomData.doorTile.y, doorTile.height);
+    // @ts-ignore
+      const doorGraphicsDepth = DepthManager.getCategoryLayerOffset(RoomObjectCategory.DOOR);
+
+    const transitionZone = 1.5;
+    const isNearDoor = distanceToDoor < transitionZone;
+    const isBehindDoor = avatarDepth <= doorDepth + (isNearDoor ? 2000000 : 0);
+
+    if (isBehindDoor) {
+      const finalDepth = doorGraphicsDepth - 1000;
+      this.avatar.setDepth(finalDepth);
+    } else {
+      const finalDepth = doorGraphicsDepth + 1000;
+      this.avatar.setDepth(finalDepth);
+    }
   }
 
   private renderHoverTile(tileX: number, tileY: number): void {

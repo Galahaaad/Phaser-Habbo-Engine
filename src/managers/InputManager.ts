@@ -9,7 +9,6 @@ export interface TilePosition {
 
 export class InputManager {
   private scene: Phaser.Scene;
-  private roomManager: RoomManager;
   private spatialGrid: TileSpatialGrid;
   private currentHoverTile: TilePosition | null = null;
   private isDragging: boolean = false;
@@ -21,12 +20,9 @@ export class InputManager {
 
   constructor(scene: Phaser.Scene, roomManager: RoomManager) {
     this.scene = scene;
-    this.roomManager = roomManager;
 
     const roomData = roomManager.getRoomData();
     this.spatialGrid = new TileSpatialGrid(roomData.tiles);
-
-    console.log(`[InputManager] Spatial grid: ${this.spatialGrid.getCellCount()} cells, avg ${this.spatialGrid.getAverageTilesPerCell().toFixed(1)} tiles/cell`);
 
     this.setupInputHandlers();
   }

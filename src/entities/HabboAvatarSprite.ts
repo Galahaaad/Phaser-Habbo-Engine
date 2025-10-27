@@ -1,8 +1,6 @@
 import Phaser from 'phaser';
 import { Vector3 } from '@data/types/Vector3';
 import { IsometricEngine } from '@engine/IsometricEngine';
-import { DepthManager } from '@engine/DepthManager';
-import { RoomObjectCategory } from '@data/types/RoomData';
 
 export class HabboAvatarSprite {
   private scene: Phaser.Scene;
@@ -50,7 +48,6 @@ export class HabboAvatarSprite {
     this.container.add([this.bodySprite, this.leftHandSprite, this.rightHandSprite, this.headSprite]);
 
     this.updateScreenPosition();
-    this.updateDepth();
     this.updateSprite();
   }
 
@@ -203,7 +200,6 @@ export class HabboAvatarSprite {
     }
 
     this.updateScreenPosition();
-    this.updateDepth();
   }
 
   private calculateDirection(from: Vector3, to: Vector3): number {
@@ -254,14 +250,8 @@ export class HabboAvatarSprite {
     this.container.setPosition(containerX, containerY);
   }
 
-  private updateDepth(): void {
-    DepthManager.updateObjectDepth(
-      this.container,
-      this.position.x,
-      this.position.y,
-      this.position.z,
-      RoomObjectCategory.UNIT
-    );
+  public getPosition(): Vector3 {
+    return this.position;
   }
 
   public getTilePosition(): { x: number; y: number } {
@@ -269,6 +259,10 @@ export class HabboAvatarSprite {
       x: Math.floor(this.position.x),
       y: Math.floor(this.position.y)
     };
+  }
+
+  public setDepth(depth: number): void {
+    this.container.setDepth(depth);
   }
 
   public isMoving(): boolean {

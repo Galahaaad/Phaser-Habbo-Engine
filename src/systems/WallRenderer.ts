@@ -11,27 +11,20 @@ export interface WallStyle {
 }
 
 export const WALL_STYLES: Record<string, WallStyle> = {
-  '101': { id: '101', color: 0xb7bac8, borderColor: 0xa89985, pattern: 'paneled' },
+  '101': { id: '101', color: 0xEb7bac8, borderColor: 0xa89985, pattern: 'paneled' },
   '102': { id: '102', color: 0x6b7d8f, borderColor: 0x4a5a6a, pattern: 'paneled' },
   '103': { id: '103', color: 0xf4e4d4, borderColor: 0xc9b99a, pattern: 'striped' },
 };
 
 export class WallRenderer {
-  private currentWallType: string = '101';
   private wallThickness: number = 8;
   private floorThickness: number = 8;
   private baseWallHeight: number = 115;
   private maxHeight: number = 0;
-  // @ts-ignore
-    private scene: Phaser.Scene;
 
-  constructor(scene: Phaser.Scene) {
-    this.scene = scene;
-  }
+  constructor(_scene: Phaser.Scene) {}
 
-  public setWallType(wallType: string): void {
-    this.currentWallType = wallType;
-  }
+  public setWallType(_wallType: string): void {}
 
   public setMaxHeight(maxHeight: number): void {
     this.maxHeight = maxHeight;
@@ -41,7 +34,6 @@ export class WallRenderer {
     graphics: Phaser.GameObjects.Graphics,
     wallMeshes: WallMesh[]
   ): void {
-    const style = WALL_STYLES[this.currentWallType] || WALL_STYLES['101'];
     const thicknessTiles = this.wallThickness / IsometricEngine.TILE_SCALE;
 
     const sortedWalls = [...wallMeshes].sort((a, b) => {
@@ -91,6 +83,40 @@ export class WallRenderer {
       });
 
     }
+  }
+
+  public renderDoorFrame(
+    graphics: Phaser.GameObjects.Graphics,
+    doorX: number,
+    doorY: number,
+    doorZ: number
+  ): void {
+    const doorHeight = 80;
+    const frameWidth = 8;
+
+    const tileBase = {
+      x: 32 * (doorX + 1) - 32 * doorY,
+      y: 16 * (doorX + 1) + 16 * doorY - 32 * doorZ
+    };
+
+    const westCorner = { x: tileBase.x, y: tileBase.y };
+    const northCorner = { x: tileBase.x + 32, y: tileBase.y - 16 };
+
+    graphics.fillStyle(0xb7bac8);
+
+    graphics.fillRect(
+      westCorner.x - frameWidth / 2,
+      westCorner.y - doorHeight,
+      frameWidth,
+      doorHeight
+    );
+
+    graphics.fillRect(
+      northCorner.x - frameWidth / 2,
+      northCorner.y - doorHeight,
+      frameWidth,
+      doorHeight
+    );
   }
 
   private calculateWallPosition(

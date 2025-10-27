@@ -78,7 +78,7 @@ export class CubeRenderer {
     graphics.fillPath();
     if (topFace?.stroke) {
       graphics.strokePath();
-      graphics.lineStyle(0);
+      graphics.lineStyle(0, 0xffffff, 0);
     }
 
     const leftFace = faceColors?.[CubeFace.LEFT];
@@ -97,7 +97,7 @@ export class CubeRenderer {
     graphics.fillPath();
     if (leftFace?.stroke) {
       graphics.strokePath();
-      graphics.lineStyle(0);
+      graphics.lineStyle(0, 0xffffff, 0);
     }
 
     const rightFace = faceColors?.[CubeFace.RIGHT];
@@ -122,7 +122,7 @@ export class CubeRenderer {
     graphics.fillPath();
     if (rightFace?.stroke) {
       graphics.strokePath();
-      graphics.lineStyle(0);
+      graphics.lineStyle(0, 0xffffff, 0);
     }
   }
 }

@@ -18,24 +18,17 @@ export const FLOOR_STYLES: Record<string, FloorStyle> = {
 };
 
 export class FloorRenderer {
-  private currentFloorType: string = '101';
   private floorThickness: number = 8;
-  private scene: Phaser.Scene;
 
-  constructor(scene: Phaser.Scene) {
-    this.scene = scene;
-  }
+  constructor(_scene: Phaser.Scene) {}
 
-  public setFloorType(floorType: string): void {
-    this.currentFloorType = floorType;
-  }
+  public setFloorType(_floorType: string): void {}
 
   public renderFloor(
     graphics: Phaser.GameObjects.Graphics,
     tileMeshes: TileMesh[],
-    doorTile?: { x: number; y: number }
+    _doorTile?: { x: number; y: number }
   ): void {
-    const style = FLOOR_STYLES[this.currentFloorType] || FLOOR_STYLES['101'];
 
     for (const mesh of tileMeshes) {
       const thicknessTiles = this.floorThickness / IsometricEngine.TILE_SCALE;
@@ -65,19 +58,6 @@ export class FloorRenderer {
         },
         screenPosition: floorScreenPos
       });
-    }
-  }
-
-  private shouldUseAlternateColor(x: number, y: number, pattern: string): boolean {
-    switch (pattern) {
-      case 'checkered':
-        return (x + y) % 2 === 0;
-      case 'striped':
-        return x % 2 === 0;
-      case 'dotted':
-        return false;
-      default:
-        return false;
     }
   }
 }

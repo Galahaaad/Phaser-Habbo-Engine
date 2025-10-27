@@ -11,7 +11,8 @@ export interface Tile {
 export enum RoomObjectCategory {
   FLOOR = 0,
   WALL = 1,
-  UNIT = 2
+  UNIT = 2,
+  DOOR = 3
 }
 
 export interface RoomObject {
