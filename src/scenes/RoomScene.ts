@@ -191,23 +191,26 @@ export class RoomScene extends Phaser.Scene {
 
     const stairTilePositions = new Set<string>();
 
-    const tilesHeight0 = tileMeshes.filter(mesh => mesh.position.z === 0);
-    const tilesHeightUp = tileMeshes.filter(mesh => mesh.position.z > 0);
-
-    const graphicsHeight0 = this.add.graphics();
-    graphicsHeight0.setDepth(0);
-    this.floorRenderer.renderFloor(graphicsHeight0, tilesHeight0, roomData.doorTile, stairTilePositions);
-
     const graphics = this.add.graphics();
     graphics.setDepth(1);
 
-    const stairGraphics = this.add.graphics();
-    stairGraphics.setDepth(5);
+    const tilesByHeight = new Map<number, TileMesh[]>();
+    tileMeshes.forEach(mesh => {
+      const height = mesh.position.z;
+      if (!tilesByHeight.has(height)) {
+        tilesByHeight.set(height, []);
+      }
+      tilesByHeight.get(height)!.push(mesh);
+    });
 
-    const graphicsHeightUp = this.add.graphics();
-    graphicsHeightUp.setDepth(7);
-    this.floorRenderer.renderFloor(graphicsHeightUp, tilesHeightUp, roomData.doorTile, stairTilePositions);
-    this.stairRenderer.renderStairs(stairGraphics, stairMeshes);
+    tilesByHeight.forEach((meshes, height) => {
+      const tileGraphics = this.add.graphics();
+      const tileDepth = 100 + (height * 10) + 4;
+      tileGraphics.setDepth(tileDepth);
+      this.floorRenderer.renderFloor(tileGraphics, meshes, roomData.doorTile, stairTilePositions);
+    });
+
+    this.stairRenderer.renderStairs(stairMeshes);
 
     if (this.wallGraphicsObject) {
       this.wallGraphicsObject.destroy();
@@ -237,12 +240,7 @@ export class RoomScene extends Phaser.Scene {
   }
 
   private renderTileBorders(stairTilePositions: Set<string>): void {
-    const borderGraphicsHeight0 = this.add.graphics();
-    borderGraphicsHeight0.setDepth(3);
-
-    const borderGraphicsHeightUp = this.add.graphics();
-    borderGraphicsHeightUp.setDepth(8);
-
+    const borderGraphicsByHeight = new Map<number, Phaser.GameObjects.Graphics>();
     const roomData = this.roomManager.getRoomData();
 
     for (let y = 0; y <= roomData.maxY; y++) {
@@ -258,8 +256,16 @@ export class RoomScene extends Phaser.Scene {
           continue;
         }
 
+        const height = tile.height;
+        if (!borderGraphicsByHeight.has(height)) {
+          const borderGraphics = this.add.graphics();
+          const borderDepth = 100 + (height * 10) + 4.5;
+          borderGraphics.setDepth(borderDepth);
+          borderGraphicsByHeight.set(height, borderGraphics);
+        }
+
         const tileToScreenPos = IsometricEngine.tileToScreen(x, y, tile.height);
-        const borderGraphics = tile.height === 0 ? borderGraphicsHeight0 : borderGraphicsHeightUp;
+        const borderGraphics = borderGraphicsByHeight.get(height)!;
 
         borderGraphics.lineStyle(1, 0x8f8f5f, 1);
         borderGraphics.beginPath();

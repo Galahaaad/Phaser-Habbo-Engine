@@ -452,7 +452,8 @@ export class GreedyMesher {
 
     console.log('Detected stairs:', stairs.map(s => ({
       pos: `(${s.position.x},${s.position.y})`,
-      dir: s.direction !== null ? (s.direction === 0 ? 'NORTH' : 'WEST') : 'corner',
+      z: s.position.z,
+      dir: s.direction !== null ? (s.direction === 0 ? 'NORTH' : s.direction === 1 ? 'EAST' : s.direction === 2 ? 'WEST' : 'SOUTH') : 'corner',
       corner: s.corner
     })));
 

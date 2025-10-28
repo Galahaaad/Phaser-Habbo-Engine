@@ -12,10 +12,17 @@ export class StairRenderer {
     this.scene = scene;
   }
 
-  public renderStairs(graphics: Phaser.GameObjects.Graphics, stairs: StairMesh[]): void {
+  public renderStairs(stairs: StairMesh[]): void {
     for (const stair of stairs) {
-      this.renderStair(graphics, stair);
+      const stairGraphics = this.scene.add.graphics();
+      const depth = this.calculateStairDepth(stair.position.z);
+      stairGraphics.setDepth(depth);
+      this.renderStair(stairGraphics, stair);
     }
+  }
+
+  private calculateStairDepth(stairZ: number): number {
+    return 100 + (stairZ * 10) + 5;
   }
 
   private renderStair(graphics: Phaser.GameObjects.Graphics, stair: StairMesh): void {
