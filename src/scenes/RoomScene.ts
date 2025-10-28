@@ -5,6 +5,7 @@ import { HabboAvatarSprite } from '@entities/HabboAvatarSprite';
 import { PathFinder } from '@systems/PathFinder';
 import { FloorRenderer } from '@systems/FloorRenderer';
 import { WallRenderer } from '@systems/WallRenderer';
+import { StairRenderer } from '@systems/StairRenderer';
 import { RoomManager } from '@managers/RoomManager';
 import { InputManager, TilePosition } from '@managers/InputManager';
 import { CameraManager } from '@managers/CameraManager';
@@ -22,6 +23,7 @@ export class RoomScene extends Phaser.Scene {
   private pathFinder!: PathFinder;
   private floorRenderer!: FloorRenderer;
   private wallRenderer!: WallRenderer;
+  private stairRenderer!: StairRenderer;
   private hoverGraphics!: Phaser.GameObjects.Graphics;
   private wallGraphicsObject?: Phaser.GameObjects.Graphics;
 
@@ -77,6 +79,8 @@ export class RoomScene extends Phaser.Scene {
 
     this.wallRenderer = new WallRenderer(this);
     this.wallRenderer.setWallType('101');
+
+    this.stairRenderer = new StairRenderer(this);
 
     this.hoverGraphics = this.add.graphics();
     this.hoverGraphics.setDepth(998);
@@ -157,13 +161,10 @@ export class RoomScene extends Phaser.Scene {
       return;
     }
 
-    console.log(`[RoomScene] Tile clicked: (${tile.x}, ${tile.y})`);
-
     const avatarPos = this.avatar.getTilePosition();
     const path = this.pathFinder.findPath(avatarPos.x, avatarPos.y, tile.x, tile.y);
 
     if (path) {
-      console.log(`[RoomScene] Path found:`, path.map(p => `(${p.x},${p.y})`).join(' -> '));
       this.avatar.walkTo(path);
 
       useGameStore.getState().setAvatarMoving(true);
@@ -184,12 +185,29 @@ export class RoomScene extends Phaser.Scene {
   }
 
   private renderRoom(): void {
-    const graphics = this.add.graphics();
     const roomData = this.roomManager.getRoomData();
 
-    const { tileMeshes, wallMeshes } = this.meshCache.getMeshes(roomData.tiles, roomData.doorTile);
+    const { tileMeshes, wallMeshes, stairMeshes } = this.meshCache.getMeshes(roomData.tiles, roomData.doorTile);
 
-    this.floorRenderer.renderFloor(graphics, tileMeshes, roomData.doorTile);
+    const stairTilePositions = new Set<string>();
+
+    const tilesHeight0 = tileMeshes.filter(mesh => mesh.position.z === 0);
+    const tilesHeightUp = tileMeshes.filter(mesh => mesh.position.z > 0);
+
+    const graphicsHeight0 = this.add.graphics();
+    graphicsHeight0.setDepth(0);
+    this.floorRenderer.renderFloor(graphicsHeight0, tilesHeight0, roomData.doorTile, stairTilePositions);
+
+    const graphics = this.add.graphics();
+    graphics.setDepth(1);
+
+    const stairGraphics = this.add.graphics();
+    stairGraphics.setDepth(5);
+
+    const graphicsHeightUp = this.add.graphics();
+    graphicsHeightUp.setDepth(7);
+    this.floorRenderer.renderFloor(graphicsHeightUp, tilesHeightUp, roomData.doorTile, stairTilePositions);
+    this.stairRenderer.renderStairs(stairGraphics, stairMeshes);
 
     if (this.wallGraphicsObject) {
       this.wallGraphicsObject.destroy();
@@ -215,12 +233,16 @@ export class RoomScene extends Phaser.Scene {
       }
     }
 
-    this.renderTileBorders();
+    this.renderTileBorders(stairTilePositions);
   }
 
-  private renderTileBorders(): void {
-    const borderGraphics = this.add.graphics();
-    borderGraphics.setDepth(10);
+  private renderTileBorders(stairTilePositions: Set<string>): void {
+    const borderGraphicsHeight0 = this.add.graphics();
+    borderGraphicsHeight0.setDepth(3);
+
+    const borderGraphicsHeightUp = this.add.graphics();
+    borderGraphicsHeightUp.setDepth(8);
+
     const roomData = this.roomManager.getRoomData();
 
     for (let y = 0; y <= roomData.maxY; y++) {
@@ -232,7 +254,12 @@ export class RoomScene extends Phaser.Scene {
           continue;
         }
 
+        if (stairTilePositions.has(`${x},${y}`)) {
+          continue;
+        }
+
         const tileToScreenPos = IsometricEngine.tileToScreen(x, y, tile.height);
+        const borderGraphics = tile.height === 0 ? borderGraphicsHeight0 : borderGraphicsHeightUp;
 
         borderGraphics.lineStyle(1, 0x8f8f5f, 1);
         borderGraphics.beginPath();

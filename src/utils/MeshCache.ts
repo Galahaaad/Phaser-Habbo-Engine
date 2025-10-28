@@ -1,10 +1,12 @@
 import { Tile } from '@data/types/RoomData';
 import { TileMesh, WallMesh } from '@data/types/MeshData';
+import { StairMesh } from '@data/types/StairData';
 import { GreedyMesher } from '@engine/GreedyMesher';
 
 interface CachedMeshes {
   tileMeshes: TileMesh[];
   wallMeshes: WallMesh[];
+  stairMeshes: StairMesh[];
   hash: string;
 }
 
@@ -24,27 +26,30 @@ export class MeshCache {
     return hashParts.join('-');
   }
 
-  public getMeshes(tiles: Tile[][], doorTile?: { x: number; y: number }): { tileMeshes: TileMesh[]; wallMeshes: WallMesh[] } {
+  public getMeshes(tiles: Tile[][], doorTile?: { x: number; y: number }): { tileMeshes: TileMesh[]; wallMeshes: WallMesh[]; stairMeshes: StairMesh[] } {
     const hash = this.generateHash(tiles);
 
     if (this.cache && this.cache.hash === hash) {
       return {
         tileMeshes: this.cache.tileMeshes,
-        wallMeshes: this.cache.wallMeshes
+        wallMeshes: this.cache.wallMeshes,
+        stairMeshes: this.cache.stairMeshes
       };
     }
 
     const mesher = new GreedyMesher(tiles, doorTile);
     const tileMeshes = mesher.getTileMeshes();
     const wallMeshes = mesher.getWallMeshes();
+    const stairMeshes = mesher.getStairMeshes();
 
     this.cache = {
       tileMeshes,
       wallMeshes,
+      stairMeshes,
       hash
     };
 
-    return { tileMeshes, wallMeshes };
+    return { tileMeshes, wallMeshes, stairMeshes };
   }
 
   public invalidate(): void {

@@ -77,6 +77,5 @@ export const useGameStore = create<GameStore>((set) => ({
 
   navigateToRoom: (roomId) => {
     set({ roomId, chatMessages: [] });
-    console.log(`[Store] Navigating to room: ${roomId}`);
   }
 }));

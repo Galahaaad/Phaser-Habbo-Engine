@@ -11,7 +11,6 @@ export class LoaderScene extends Phaser.Scene {
   }
 
   public init(): void {
-    console.log('[LoaderScene] Initializing asset loading...');
   }
 
   public preload(): void {
@@ -37,8 +36,6 @@ export class LoaderScene extends Phaser.Scene {
   }
 
   private simulateLoading(): void {
-    console.log('[LoaderScene] Loading Habbo assets...');
-
     AssetLoader.loadFurniture(this, 'SF_chair_blue', 'chair_blue');
     AssetLoader.loadFurniture(this, 'SF_chair_red', 'chair_red');
     AssetLoader.loadFurniture(this, 'CF_10_coin_gold', 'coin_gold');
@@ -59,12 +56,9 @@ export class LoaderScene extends Phaser.Scene {
   }
 
   private onFileProgress(file: Phaser.Loader.File): void {
-    console.log(`[LoaderScene] Loaded: ${file.key}`);
   }
 
   private onLoadComplete(): void {
-    console.log('[LoaderScene] All assets loaded');
-
     this.loadingText.destroy();
     this.progressBar.destroy();
     this.progressBox.destroy();

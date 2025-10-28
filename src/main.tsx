@@ -24,6 +24,7 @@ const phaserConfig: Phaser.Types.Core.GameConfig = {
 
 const game = new Phaser.Game(phaserConfig);
 
+// @ts-ignore
 if (import.meta.env?.DEV) {
   (window as any).game = game;
 }
@@ -32,5 +33,3 @@ const reactRoot = document.getElementById('react-root');
 if (reactRoot) {
   createRoot(reactRoot).render(<App />);
 }
-
-console.log('[Main] Phaser + React initialized');

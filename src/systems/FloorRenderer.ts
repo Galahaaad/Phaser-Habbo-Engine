@@ -27,10 +27,57 @@ export class FloorRenderer {
   public renderFloor(
     graphics: Phaser.GameObjects.Graphics,
     tileMeshes: TileMesh[],
-    _doorTile?: { x: number; y: number }
+    _doorTile?: { x: number; y: number },
+    stairTilePositions?: Set<string>
   ): void {
 
     for (const mesh of tileMeshes) {
+      if (stairTilePositions) {
+        let hasStair = false;
+        for (let dy = 0; dy < mesh.size.y; dy++) {
+          for (let dx = 0; dx < mesh.size.x; dx++) {
+            const tileX = mesh.position.x + dx;
+            const tileY = mesh.position.y + dy;
+            if (stairTilePositions.has(`${tileX},${tileY}`)) {
+              hasStair = true;
+              break;
+            }
+          }
+          if (hasStair) break;
+        }
+
+        if (hasStair) {
+          for (let dy = 0; dy < mesh.size.y; dy++) {
+            for (let dx = 0; dx < mesh.size.x; dx++) {
+              const tileX = mesh.position.x + dx;
+              const tileY = mesh.position.y + dy;
+
+              if (stairTilePositions.has(`${tileX},${tileY}`)) {
+                continue;
+              }
+
+              const thicknessTiles = this.floorThickness / IsometricEngine.TILE_SCALE;
+              const floorScreenPos = {
+                x: 32 * tileX - 32 * tileY,
+                y: 16 * tileX + 16 * tileY - 32 * mesh.position.z
+              };
+
+              CubeRenderer.renderCube(graphics, {
+                position: { x: tileX, y: tileY, z: mesh.position.z },
+                size: { x: 1, y: 1, z: thicknessTiles },
+                faceColors: {
+                  [CubeFace.TOP]: { fill: 0x999966 },
+                  [CubeFace.LEFT]: { fill: 0x858558 },
+                  [CubeFace.RIGHT]: { fill: 0x70704b }
+                },
+                screenPosition: floorScreenPos
+              });
+            }
+          }
+          continue;
+        }
+      }
+
       const thicknessTiles = this.floorThickness / IsometricEngine.TILE_SCALE;
 
       const floorScreenPos = {

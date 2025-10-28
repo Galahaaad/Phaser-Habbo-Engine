@@ -23,9 +23,9 @@ export class RoomManager {
       'xxxxxxxxx0000000000000000',
       'x000000000000000000000000',
       'x000000000000000000000000',
-      'x000000000000000000000000',
-      'x000000000000000000000000',
-      '0000000000000000000000000',
+      'x000000000001110000000000',
+      'x000000000001110000000000',
+      '0000000000001110000000000',
       'x000000000000000000000000',
       'x000000000000000000000000',
       'x000000000000000000000000',
@@ -48,12 +48,14 @@ export class RoomManager {
     for (let y = 0; y <= maxY; y++) {
       tiles[y] = [];
       for (let x = 0; x <= maxX; x++) {
-        const isFloor = floorPattern[y][x] === '0';
+        const char = floorPattern[y][x];
+        const isFloor = char !== 'x';
+        const height = isFloor ? parseInt(char, 10) : 0;
 
         tiles[y][x] = {
           x,
           y,
-          height: 0,
+          height: height,
           isBlocked: false,
           walkable: isFloor
         };
@@ -97,7 +99,6 @@ export class RoomManager {
           !botTile &&
           midTile
         ) {
-          console.log(`[RoomManager] Door tile detected at: (${x}, ${y})`);
           return { x, y };
         }
       }

@@ -38,8 +38,6 @@ export class DoorRenderer {
     this.doorGraphics.closePath();
     this.doorGraphics.fillPath();
     this.doorGraphics.setDepth(500);
-
-    console.log(`[DoorRenderer] Door rendered (black) - West(${westCorner.x},${westCorner.y}) North(${northCorner.x},${northCorner.y})`);
   }
 
   public destroy(): void {

@@ -1,5 +1,6 @@
 import { Tile } from '@data/types/RoomData';
 import { TileMesh, WallMesh, Vector3D } from '@data/types/MeshData';
+import { StairMesh, StairDirection } from '@data/types/StairData';
 import { IsometricEngine } from '@engine/IsometricEngine';
 
 export class GreedyMesher {
@@ -179,8 +180,6 @@ export class GreedyMesher {
     const rowWallSizes: Map<string, Vector3D | undefined> = new Map();
     const columnWallSizes: Map<string, Vector3D | undefined> = new Map();
 
-    console.log(`[GreedyMesher] Generating - door at (${this.doorTile?.x}, ${this.doorTile?.y})`);
-
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {
         const tile = this.tiles[y][x];
@@ -191,11 +190,9 @@ export class GreedyMesher {
         const needsWestWall = this.shouldHaveWestWall(x, y);
 
         if (needsNorthWall) {
-          console.log(`[GreedyMesher] Tile (${x},${y}) needs NORTH wall`);
           rowWallSizes.set(key, { x: 1, y: 1, z: tile.height });
         }
         if (needsWestWall) {
-          console.log(`[GreedyMesher] Tile (${x},${y}) needs WEST wall`);
           columnWallSizes.set(key, { x: 1, y: 1, z: tile.height });
         }
       }
@@ -294,9 +291,6 @@ export class GreedyMesher {
   private splitWallMeshesAtDoor(meshes: WallMesh[]): WallMesh[] {
     if (!this.doorTile) return meshes;
 
-    console.log(`[GreedyMesher] Splitting walls at door tile (${this.doorTile.x}, ${this.doorTile.y})`);
-    console.log(`[GreedyMesher] Input meshes:`, meshes.length);
-
     const result: WallMesh[] = [];
 
     for (const mesh of meshes) {
@@ -309,7 +303,6 @@ export class GreedyMesher {
         const meshY = position.y;
 
         if (meshY === this.doorTile.y && this.doorTile.x >= startX && this.doorTile.x <= endX) {
-          console.log(`[GreedyMesher] Splitting NORTH wall at y=${meshY} from x=${startX} to x=${endX}`);
           doorInMesh = true;
 
           if (this.doorTile.x > startX) {
@@ -336,7 +329,6 @@ export class GreedyMesher {
         const endY = position.y + length - 1;
 
         if (meshX === this.doorTile.x && this.doorTile.y >= startY && this.doorTile.y <= endY) {
-          console.log(`[GreedyMesher] Splitting WEST wall at x=${meshX} from y=${startY} to y=${endY}`);
           doorInMesh = true;
 
           if (this.doorTile.y > startY) {
@@ -364,7 +356,106 @@ export class GreedyMesher {
       }
     }
 
-    console.log(`[GreedyMesher] Output meshes after split:`, result.length);
     return result;
+  }
+
+  public getStairMeshes(): StairMesh[] {
+    const stairs: StairMesh[] = [];
+
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        const tile = this.tiles[y]?.[x];
+        if (!tile || !tile.walkable) continue;
+
+        const topTile = this.tiles[y - 1]?.[x];
+        const leftTile = this.tiles[y]?.[x - 1];
+        const rightTile = this.tiles[y]?.[x + 1];
+        const topLeftTile = this.tiles[y - 1]?.[x - 1];
+        const bottomLeftTile = this.tiles[y + 1]?.[x - 1];
+        const topRightTile = this.tiles[y - 1]?.[x + 1];
+
+        if (topTile && topTile.walkable && topTile.height - tile.height === 1) {
+          stairs.push({
+            position: { x, y, z: tile.height },
+            direction: StairDirection.NORTH,
+            length: 1,
+            corner: null
+          });
+          continue;
+        }
+
+        if (leftTile && leftTile.walkable && leftTile.height - tile.height === 1) {
+          stairs.push({
+            position: { x, y, z: tile.height },
+            direction: StairDirection.WEST,
+            length: 1,
+            corner: null
+          });
+          continue;
+        }
+
+        const bottomTile = this.tiles[y + 1]?.[x];
+        if (bottomTile && bottomTile.walkable && bottomTile.height - tile.height === 1) {
+          stairs.push({
+            position: { x, y, z: tile.height },
+            direction: StairDirection.SOUTH,
+            length: 1,
+            corner: null
+          });
+          continue;
+        }
+
+        if (rightTile && rightTile.walkable && rightTile.height - tile.height === 1) {
+          stairs.push({
+            position: { x, y, z: tile.height },
+            direction: StairDirection.EAST,
+            length: 1,
+            corner: null
+          });
+          continue;
+        }
+
+        if (bottomLeftTile && bottomLeftTile.walkable && bottomLeftTile.height - tile.height === 1 &&
+            (!leftTile || !leftTile.walkable || leftTile.height <= tile.height)) {
+          stairs.push({
+            position: { x, y, z: tile.height },
+            direction: null,
+            length: 1,
+            corner: 'left'
+          });
+          continue;
+        }
+
+        if (topRightTile && topRightTile.walkable && topRightTile.height - tile.height === 1 &&
+            (!rightTile || !rightTile.walkable || rightTile.height <= tile.height)) {
+          stairs.push({
+            position: { x, y, z: tile.height },
+            direction: null,
+            length: 1,
+            corner: 'right'
+          });
+          continue;
+        }
+
+        if (topLeftTile && topLeftTile.walkable && topLeftTile.height - tile.height === 1 &&
+            (!leftTile || !leftTile.walkable || leftTile.height <= tile.height)) {
+          stairs.push({
+            position: { x, y, z: tile.height },
+            direction: null,
+            length: 1,
+            corner: 'front'
+          });
+          continue;
+        }
+      }
+    }
+
+    console.log('Detected stairs:', stairs.map(s => ({
+      pos: `(${s.position.x},${s.position.y})`,
+      dir: s.direction !== null ? (s.direction === 0 ? 'NORTH' : 'WEST') : 'corner',
+      corner: s.corner
+    })));
+
+    return stairs;
   }
 }
