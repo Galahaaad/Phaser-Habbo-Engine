@@ -3,43 +3,31 @@ import { RoomData, Tile } from '@data/types/RoomData';
 export class RoomManager {
   private roomData: RoomData;
 
-  constructor() {
-    this.roomData = this.createDefaultRoom();
+  constructor(customPattern?: string[]) {
+    this.roomData = this.createDefaultRoom(customPattern);
   }
 
-  private createDefaultRoom(): RoomData {
+  private createDefaultRoom(customPattern?: string[]): RoomData {
     const tiles: Tile[][] = [];
     const maxHeight = 0;
 
-    const floorPattern = [
-      'xxxxxxxxxxxxxxxxxxxxxxxxx',
-      'xxxxxxxxxxxxxxxxx00000000',
-      'xxxxxxxxxxxxxxxxx00000000',
-      'xxxxxxxxxxxxxxxxx00000000',
-      'xxxxxxxxxxxxxxxxx00000000',
-      'xxxxxxxxx0000000000000000',
-      'xxxxxxxxx0000000000000000',
-      'xxxxxxxxx0000000000000000',
-      'xxxxxxxxx0000000000000000',
-      'x000000000000000000000000',
-      'x000000000000000000000000',
-      'x000000000003330000000000',
-      'x000000000002220000000000',
-      '0000000000001110000000000',
-      'x000000000000000000000000',
-      'x000000000000000000000000',
-      'x000000000000000000000000',
-      'xxxxxxxxx0000000000000000',
-      'xxxxxxxxx0000000000000000',
-      'xxxxxxxxx0000000000000000',
-      'xxxxxxxxx0000000000000000',
-      'xxxxxxxxx0000000000000000',
-      'xxxxxxxxx0000000000000000',
-      'xxxxxxxxx0000000000000000',
-      'xxxxxxxxx0000000000000000',
-      'xxxxxxxxx0000000000000000',
-      'xxxxxxxxx0000000000000000',
-      'xxxxxxxxxxxxxxxxxxxxxxxxx'
+    const floorPattern = customPattern || [
+      'xxxxxxxxxxxx',
+      'xxxxxxx0000x',
+      'xxxxxxx0000x',
+      'xxx00000000x',
+      'xxx00000000x',
+      'xx000000000x',
+      'xxx00000000x',
+      'x0000001100x',
+      'x0000000000x',
+      'x0000000000x',
+      'x0000000000x',
+      'xxxxxxxxxxxx',
+      'xxxxxxxxxxxx',
+      'xxxxxxxxxxxx',
+      'xxxxxxxxxxxx',
+      'xxxxxxxxxxxx'
     ];
 
     const maxY = floorPattern.length - 1;
@@ -50,7 +38,7 @@ export class RoomManager {
       for (let x = 0; x <= maxX; x++) {
         const char = floorPattern[y][x];
         const isFloor = char !== 'x';
-        const height = isFloor ? parseInt(char, 10) : 0;
+        const height = isFloor ? parseInt(char, 36) : 0;
 
         tiles[y][x] = {
           x,

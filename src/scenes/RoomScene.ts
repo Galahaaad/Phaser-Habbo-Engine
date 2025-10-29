@@ -45,6 +45,8 @@ export class RoomScene extends Phaser.Scene {
 
     this.inputManager = new InputManager(this, this.roomManager);
 
+    this.game.events.on('floorplan-updated', this.handleFloorplanUpdate, this);
+
     this.createAvatarAtlas();
     this.setupRenderers();
     this.setupAvatar();
@@ -181,6 +183,47 @@ export class RoomScene extends Phaser.Scene {
       this.renderHoverTile(tile.x, tile.y);
     } else {
       this.hoverGraphics.clear();
+    }
+  }
+
+  private handleFloorplanUpdate(data: any): void {
+    console.log('Reloading room with new data:', data);
+
+    const { pattern, wallHeight, wallThickness, floorThickness } = data;
+
+    const childrenToDestroy: Phaser.GameObjects.GameObject[] = [];
+    this.children.each((child) => {
+      if (child instanceof Phaser.GameObjects.Graphics ||
+          child instanceof Phaser.GameObjects.Container ||
+          child instanceof Phaser.GameObjects.Image ||
+          child instanceof Phaser.GameObjects.Sprite) {
+        if (child !== this.avatar && child !== this.hoverGraphics) {
+          childrenToDestroy.push(child);
+        }
+      }
+    });
+
+    childrenToDestroy.forEach(child => child.destroy());
+
+    this.roomManager = new RoomManager(pattern);
+    this.meshCache = new MeshCache();
+    this.inputManager = new InputManager(this, this.roomManager);
+
+    if (wallHeight !== undefined) {
+      this.wallRenderer.setWallHeight(wallHeight);
+    }
+    if (wallThickness !== undefined) {
+      this.wallRenderer.setWallThickness(wallThickness);
+    }
+    if (floorThickness !== undefined) {
+      this.wallRenderer.setFloorThickness(floorThickness);
+    }
+
+    this.renderRoom();
+
+    if (this.avatar) {
+      this.avatar.destroy();
+      this.setupAvatar();
     }
   }
 

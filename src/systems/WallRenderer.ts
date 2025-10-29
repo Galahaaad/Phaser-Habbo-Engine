@@ -30,6 +30,18 @@ export class WallRenderer {
     this.maxHeight = maxHeight;
   }
 
+  public setWallHeight(wallHeight: number): void {
+    this.baseWallHeight = wallHeight * 32;
+  }
+
+  public setWallThickness(thickness: number): void {
+    this.wallThickness = thickness * 8;
+  }
+
+  public setFloorThickness(thickness: number): void {
+    this.floorThickness = thickness * 8;
+  }
+
   public renderWalls(
     graphics: Phaser.GameObjects.Graphics,
     wallMeshes: WallMesh[]
