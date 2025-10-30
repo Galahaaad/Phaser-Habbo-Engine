@@ -30,6 +30,9 @@ export class RoomScene extends Phaser.Scene {
   private hoverGraphics!: Phaser.GameObjects.Graphics;
   private wallGraphicsObject?: Phaser.GameObjects.Graphics;
 
+  private lastRecenterTime: number = 0;
+  private recenterCooldown: number = 1000;
+
   constructor() {
     super({ key: 'RoomScene' });
   }
@@ -374,9 +377,40 @@ export class RoomScene extends Phaser.Scene {
       }
 
       this.updateAvatarDepthRelativeToDoor();
+      this.checkAndRecenterCamera(time);
     }
 
     this.inputManager.update();
+  }
+
+  private checkAndRecenterCamera(currentTime: number): void {
+    if (currentTime - this.lastRecenterTime < this.recenterCooldown) {
+      return;
+    }
+
+    const roomData = this.roomManager.getRoomData();
+
+    const corner1 = IsometricEngine.tileToScreen(0, 0, 0);
+    const corner2 = IsometricEngine.tileToScreen(roomData.maxX, 0, 0);
+    const corner3 = IsometricEngine.tileToScreen(0, roomData.maxY, 0);
+    const corner4 = IsometricEngine.tileToScreen(roomData.maxX, roomData.maxY, 0);
+
+    const minX = Math.min(corner1.x, corner2.x, corner3.x, corner4.x);
+    const maxX = Math.max(corner1.x, corner2.x, corner3.x, corner4.x);
+    const minY = Math.min(corner1.y, corner2.y, corner3.y, corner4.y);
+    const maxY = Math.max(corner1.y, corner2.y, corner3.y, corner4.y);
+
+    const roomWidth = maxX - minX;
+    const roomHeight = maxY - minY;
+
+    const isRoomVisible = this.cameraManager.isRectangleVisible(minX, minY, roomWidth, roomHeight);
+
+    if (!isRoomVisible) {
+      const avatarPos = this.avatar.getPosition();
+      const avatarScreenPos = IsometricEngine.tileToScreen(avatarPos.x, avatarPos.y, avatarPos.z);
+      this.cameraManager.smoothCenterOn(avatarScreenPos.x, avatarScreenPos.y, 800);
+      this.lastRecenterTime = currentTime;
+    }
   }
 
   private updateAvatarDepthRelativeToDoor(): void {
