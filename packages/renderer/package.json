@@ -1,0 +1,28 @@
+{
+  "name": "@polaris/renderer",
+  "version": "0.1.0",
+  "description": "Core Polaris isometric rendering engine built with Phaser 3",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "pako": "^2.1.0",
+    "phaser": "^3.87.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/pako": "^2.0.4",
+    "typescript": "^5.7.2"
+  }
+}

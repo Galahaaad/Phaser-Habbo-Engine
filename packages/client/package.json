@@ -1,0 +1,28 @@
+{
+  "name": "@polaris/client",
+  "version": "0.1.0",
+  "description": "Polaris Client Web Application with UI",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@polaris/renderer": "*",
+    "phaser": "^3.87.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zustand": "^5.0.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.1.0",
+    "sass": "^1.93.2",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3"
+  }
+}

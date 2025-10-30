@@ -1,0 +1,157 @@
+.floorplan-toolbar {
+  width: 220px;
+  background: #25262b;
+  border-right: 1px solid #3f4147;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  .toolbar-section {
+    h3 {
+      margin: 0 0 10px 0;
+      font-size: 12px;
+      font-weight: 300;
+      text-transform: uppercase;
+      color: #fff;
+      letter-spacing: 0.5px;
+    }
+
+    &.full-width {
+      width: 100%;
+    }
+  }
+
+  .tool-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .tool-btn {
+    width: 100%;
+    height: 48px;
+    background: #2c2d31;
+    border: 2px solid transparent;
+    border-radius: 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    padding: 0;
+
+    img {
+      width: 40px;
+      height: 40px;
+      object-fit: contain;
+    }
+
+    &:hover {
+      background: #33353a;
+      border-color: #4a9eff;
+    }
+
+    &.active {
+      background: #3d8ae6;
+      border-color: #4a9eff;
+    }
+  }
+
+  .door-direction-btn {
+    width: 56px;
+    height: 42px;
+    background: #2c2d31;
+    border: 2px solid #3f4147;
+    border-radius: 0;
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    img {
+      width: 52px;
+      height: 52px;
+      object-fit: contain;
+    }
+
+    &:hover {
+      border-color: #4a9eff;
+    }
+  }
+
+  .number-input {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #2c2d31;
+    border-radius: 0;
+    padding: 3px;
+
+    button {
+      width: 28px;
+      height: 28px;
+      background: #3f4147;
+      border: none;
+      border-radius: 0;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover {
+        background: #4a4c54;
+      }
+    }
+
+    span {
+      flex: 1;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 300;
+    }
+  }
+
+  .height-slider {
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: #3f4147;
+    outline: none;
+    -webkit-appearance: none;
+
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #4a9eff;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover {
+        background: #3d8ae6;
+        transform: scale(1.1);
+      }
+    }
+
+    &::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #4a9eff;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+
+      &:hover {
+        background: #3d8ae6;
+        transform: scale(1.1);
+      }
+    }
+  }
+}

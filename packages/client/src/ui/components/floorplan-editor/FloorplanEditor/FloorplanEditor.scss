@@ -1,0 +1,100 @@
+.floorplan-editor {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 858px;
+  height: 537px;
+  min-width: 600px;
+  min-height: 400px;
+  background: #2c2d31;
+  border-radius: 0;
+  box-shadow: none;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Ubuntu', sans-serif;
+  color: #fff;
+  overflow: hidden;
+  resize: both;
+
+  .floorplan-editor-header {
+    padding: 5px 16px;
+    border-bottom: 1px solid #3f4147;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+
+    h2 {
+      margin: 0;
+      font-size: 1.125rem;
+      font-weight: lighter;
+      color: #fff;
+    }
+
+    .close-btn {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: repeating-linear-gradient(rgb(245,80,65),rgb(245,80,65) 50%,rgb(194,48,39) 50%,rgb(194,48,39) 100%);
+      border: none;
+      color: #fff;
+      font-size: 12px;
+      cursor: pointer;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+
+      &:hover {
+        opacity: 0.8;
+      }
+    }
+  }
+
+  .floorplan-editor-content {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+  }
+
+  .floorplan-editor-footer {
+    padding: 10px 20px;
+    border-top: 1px solid #3f4147;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .btn {
+    padding: 6px 16px;
+    border: none;
+    border-radius: 0;
+    font-size: 13px;
+    font-weight: 300;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'Ubuntu', sans-serif;
+
+    &.btn-primary {
+      background: #4a9eff;
+      color: #fff;
+
+      &:hover {
+        background: #3d8ae6;
+      }
+    }
+
+    &.btn-secondary {
+      background: #3f4147;
+      color: #fff;
+
+      &:hover {
+        background: #4a4c54;
+      }
+    }
+  }
+}
